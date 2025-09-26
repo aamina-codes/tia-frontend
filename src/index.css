@@ -26,6 +26,9 @@ All colors MUST be HSL.
     --primary-foreground: 0 0% 100%;
     --primary-hover: 235 100% 60%;
     
+    /* Custom Purple Background */
+    --purple-splash: 250 70% 25%;     /* Deep Purple from logo bg */
+    
     --secondary: 280 100% 85%;        /* Light Purple */
     --secondary-foreground: 240 10% 15%;
     

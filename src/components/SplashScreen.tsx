@@ -10,7 +10,7 @@ const SplashScreen = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-primary flex flex-col items-center justify-center px-6 text-center">
+    <div className="min-h-screen bg-purple-splash flex flex-col items-center justify-center px-6 text-center">
       {/* Butterfly Logo */}
       <div className="mb-8 animate-[fadeIn_1s_ease-out]">
         <img 

@@ -1,9 +1,15 @@
 import { Activity, TrendingUp, MessageCircle, Bell } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import Navigation from "./Navigation";
 import FeatureCard from "./FeatureCard";
 import butterflyLogo from "@/assets/tia-butterfly-logo.png";
 
 const HomePage = () => {
+  const navigate = useNavigate();
+
+  const handleLogoClick = () => {
+    navigate("/");
+  };
   const features = [
     {
       title: "Lab Report Analysis",
@@ -42,7 +48,8 @@ const HomePage = () => {
             <img 
               src={butterflyLogo} 
               alt="TIA Butterfly Logo" 
-              className="w-20 h-20 mx-auto drop-shadow-butterfly"
+              onClick={handleLogoClick}
+              className="w-20 h-20 mx-auto drop-shadow-butterfly cursor-pointer hover:scale-110 transition-transform duration-300"
             />
           </div>
           

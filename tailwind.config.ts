@@ -64,11 +64,17 @@ export default {
         'gradient-primary': 'var(--gradient-primary)',
         'gradient-card': 'var(--gradient-card)',
         'gradient-butterfly': 'var(--gradient-butterfly)',
+        'gradient-splash': 'var(--gradient-splash)',
+        'gradient-button': 'var(--gradient-button)',
       },
       boxShadow: {
         'soft': 'var(--shadow-soft)',
         'card': 'var(--shadow-card)',
         'butterfly': 'var(--shadow-butterfly)',
+        'glow-button': 'var(--glow-button)',
+      },
+      dropShadow: {
+        'glow-butterfly': 'var(--glow-butterfly)',
       },
       transitionTimingFunction: {
         'smooth': 'var(--transition-smooth)',

@@ -9,17 +9,16 @@ const SplashScreen = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-splash flex flex-col items-center justify-center px-6 text-center relative overflow-hidden">
-      {/* Abstract Background Shapes */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-white/3 rounded-full blur-3xl"></div>
+    <div className="min-h-screen bg-[hsl(270,60%,20%)] flex flex-col items-center justify-center px-6 text-center relative overflow-hidden">
+      {/* 3D Pink Edge Effect - Rounded soft highlights around screen */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 rounded-3xl shadow-[inset_0_0_80px_40px_hsl(330,100%,75%,0.15)]"></div>
+        <div className="absolute top-4 left-4 right-4 bottom-4 rounded-3xl border-2 border-pink-400/20"></div>
       </div>
 
       {/* Content Container */}
       <div className="relative z-10">
-        {/* Butterfly Logo with Glow */}
+        {/* Butterfly Logo with Soft Glow */}
         <div className="mb-8 animate-[fadeIn_1s_ease-out]">
           <img 
             src={butterflyLogo} 
@@ -45,11 +44,11 @@ const SplashScreen = () => {
           </p>
         </div>
         
-        {/* Get Started Button with Gradient */}
+        {/* Get Started Button with White-Pink Gradient & Purple Glow */}
         <div className="animate-[fadeIn_1.6s_ease-out]">
           <button 
             onClick={handleGetStarted}
-            className="bg-gradient-button text-white font-semibold px-12 py-4 text-lg rounded-full shadow-soft transition-all duration-300 hover:shadow-glow-button hover:scale-105 active:scale-95"
+            className="bg-gradient-button text-purple-900 font-semibold px-12 py-4 text-lg rounded-full shadow-glow-button transition-all duration-300 hover:shadow-glow-button-hover hover:scale-110 active:scale-95"
           >
             Get Started
           </button>
@@ -58,11 +57,11 @@ const SplashScreen = () => {
       
       {/* Floating Particles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-3 h-3 bg-white/30 rounded-full animate-[float_6s_ease-in-out_infinite] blur-sm"></div>
-        <div className="absolute top-40 right-16 w-2 h-2 bg-white/40 rounded-full animate-[float_8s_ease-in-out_infinite_2s] blur-sm"></div>
-        <div className="absolute bottom-32 left-20 w-2.5 h-2.5 bg-white/35 rounded-full animate-[float_7s_ease-in-out_infinite_4s] blur-sm"></div>
-        <div className="absolute top-1/3 right-1/4 w-2 h-2 bg-white/25 rounded-full animate-[float_9s_ease-in-out_infinite_1s] blur-sm"></div>
-        <div className="absolute bottom-1/4 left-1/3 w-3 h-3 bg-white/20 rounded-full animate-[float_10s_ease-in-out_infinite_3s] blur-sm"></div>
+        <div className="absolute top-20 left-10 w-3 h-3 bg-pink-300/30 rounded-full animate-[float_6s_ease-in-out_infinite] blur-sm"></div>
+        <div className="absolute top-40 right-16 w-2 h-2 bg-pink-200/40 rounded-full animate-[float_8s_ease-in-out_infinite_2s] blur-sm"></div>
+        <div className="absolute bottom-32 left-20 w-2.5 h-2.5 bg-pink-300/35 rounded-full animate-[float_7s_ease-in-out_infinite_4s] blur-sm"></div>
+        <div className="absolute top-1/3 right-1/4 w-2 h-2 bg-pink-200/25 rounded-full animate-[float_9s_ease-in-out_infinite_1s] blur-sm"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-3 h-3 bg-pink-300/20 rounded-full animate-[float_10s_ease-in-out_infinite_3s] blur-sm"></div>
       </div>
     </div>
   );

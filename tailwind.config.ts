@@ -72,6 +72,7 @@ export default {
         'card': 'var(--shadow-card)',
         'butterfly': 'var(--shadow-butterfly)',
         'glow-button': 'var(--glow-button)',
+        'glow-button-hover': 'var(--glow-button-hover)',
       },
       dropShadow: {
         'glow-butterfly': 'var(--glow-butterfly)',

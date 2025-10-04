@@ -10,6 +10,18 @@ const SplashScreen = () => {
 
   return (
     <div className="min-h-screen bg-[hsl(270,60%,20%)] flex flex-col items-center justify-center px-6 text-center relative overflow-hidden">
+      {/* Animated Background Effects */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Floating Gradient Orbs */}
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full blur-3xl animate-float-slow"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-br from-pink-400/15 to-purple-400/15 rounded-full blur-3xl animate-float-reverse"></div>
+        <div className="absolute top-1/2 right-1/3 w-48 h-48 bg-gradient-to-br from-blue-400/10 to-purple-500/10 rounded-full blur-2xl animate-float-slow" style={{ animationDelay: '5s' }}></div>
+        
+        {/* Slow Gradient Waves */}
+        <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 via-transparent to-purple-500/5 animate-wave"></div>
+        <div className="absolute inset-0 bg-gradient-to-tl from-blue-400/5 via-transparent to-pink-400/5 animate-wave" style={{ animationDelay: '7s' }}></div>
+      </div>
+
       {/* 3D Pink Edge Effect - Rounded soft highlights around screen */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute inset-0 rounded-3xl shadow-[inset_0_0_80px_40px_hsl(330,100%,75%,0.15)]"></div>

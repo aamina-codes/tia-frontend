@@ -1,7 +1,5 @@
-import { Activity, TrendingUp, MessageCircle, Bell } from "lucide-react";
+import { Brain, Heart, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import Navigation from "./Navigation";
-import FeatureCard from "./FeatureCard";
 import butterflyLogo from "@/assets/tia-butterfly-logo.png";
 
 const HomePage = () => {
@@ -10,126 +8,119 @@ const HomePage = () => {
   const handleLogoClick = () => {
     navigate("/");
   };
+
+  const handleGetStarted = () => {
+    // Navigate to get started or signup page
+    console.log("Get Started clicked");
+  };
+
   const features = [
     {
-      title: "Lab Report Analysis",
-      description: "Upload and analyze your thyroid lab results with AI-powered insights and personalized recommendations.",
-      icon: Activity,
-      gradientClass: "bg-gradient-card"
+      title: "Intelligent",
+      description: "AI-powered analysis of thyroid health data",
+      icon: Brain,
     },
     {
-      title: "Trend Tracking",
-      description: "Monitor your thyroid health journey with smart tracking of symptoms, medications, and lab values over time.",
-      icon: TrendingUp,
-      gradientClass: "bg-gradient-card"
+      title: "Supportive",
+      description: "24/7 guidance for thyroid care",
+      icon: Heart,
     },
     {
-      title: "Chat Support",
-      description: "Get instant answers to your thyroid questions from our intelligent assistant, available 24/7.",
-      icon: MessageCircle,
-      gradientClass: "bg-gradient-card"
-    },
-    {
-      title: "Smart Reminders",
-      description: "Never miss your medication or appointments with personalized reminders and health tips.",
-      icon: Bell,
-      gradientClass: "bg-gradient-card"
+      title: "Personalized",
+      description: "Tailored insights for unique needs",
+      icon: Sparkles,
     }
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      
-      {/* Hero Section */}
-      <section className="pt-24 pb-16 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="mb-6">
-            <img 
-              src={butterflyLogo} 
-              alt="TIA Butterfly Logo" 
-              onClick={handleLogoClick}
-              className="w-20 h-20 mx-auto drop-shadow-butterfly cursor-pointer hover:scale-110 transition-transform duration-300"
-            />
-          </div>
-          
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            Welcome to <span className="bg-gradient-primary bg-clip-text text-transparent">TIA</span>
-          </h1>
-          
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Your intelligent companion for thyroid health management. Empowering patients and supporting healthcare professionals with AI-driven insights.
-          </p>
-        </div>
-      </section>
+    <div className="min-h-screen bg-[hsl(270,60%,20%)] relative overflow-hidden">
+      {/* Animated Background Effects - matching landing page */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full blur-3xl animate-float-slow"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-br from-pink-400/15 to-purple-400/15 rounded-full blur-3xl animate-float-reverse"></div>
+        <div className="absolute top-1/2 right-1/3 w-48 h-48 bg-gradient-to-br from-blue-400/10 to-purple-500/10 rounded-full blur-2xl animate-float-slow" style={{ animationDelay: '5s' }}></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 via-transparent to-purple-500/5 animate-wave"></div>
+      </div>
 
-      {/* About Section */}
-      <section className="py-16 px-6 bg-muted/30">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">About TIA</h2>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              TIA (Thyroid Intelligent Assistant) is designed to bridge the gap between patients and healthcare providers in thyroid care. 
-              Our AI-powered platform helps you understand your thyroid health, track your progress, and make informed decisions about your wellness journey.
+      {/* Content */}
+      <div className="relative z-10">
+        {/* Header with Logo */}
+        <header className="pt-8 pb-4 px-6 flex justify-center">
+          <img 
+            src={butterflyLogo} 
+            alt="TIA Butterfly Logo" 
+            onClick={handleLogoClick}
+            className="w-16 h-16 drop-shadow-glow-butterfly cursor-pointer hover:scale-110 transition-transform duration-300"
+          />
+        </header>
+
+        {/* Our Features Section */}
+        <section className="py-16 px-6">
+          <div className="max-w-6xl mx-auto">
+            {/* Section Title */}
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                Our Features
+              </h2>
+            </div>
+            
+            {/* Feature Cards - Horizontal Layout */}
+            <div className="grid md:grid-cols-3 gap-8">
+              {features.map((feature, index) => {
+                const Icon = feature.icon;
+                return (
+                  <div 
+                    key={index}
+                    className="group bg-white/5 backdrop-blur-sm rounded-3xl p-8 border border-white/10 transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_40px_hsl(280,80%,50%,0.4)] hover:scale-105 hover:border-pink-400/30"
+                  >
+                    {/* Gradient Circular Icon */}
+                    <div className="mb-6 flex justify-center">
+                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg group-hover:shadow-[0_0_30px_hsl(280,80%,50%,0.6)] transition-all duration-300">
+                        <Icon className="w-10 h-10 text-white" />
+                      </div>
+                    </div>
+                    
+                    {/* Feature Title */}
+                    <h3 className="text-2xl font-bold text-white mb-3 text-center">
+                      {feature.title}
+                    </h3>
+                    
+                    {/* Feature Description */}
+                    <p className="text-gray-300 text-center leading-relaxed">
+                      {feature.description}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Call-to-Action Section */}
+        <section className="py-20 px-6">
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-8 leading-relaxed">
+              Ready to take charge of your thyroid health?
+            </h2>
+            
+            <button 
+              onClick={handleGetStarted}
+              className="bg-gradient-to-r from-pink-400 to-pink-300 text-purple-900 font-semibold px-12 py-4 text-lg rounded-full shadow-glow-button transition-all duration-300 hover:shadow-glow-button-hover hover:scale-110 active:scale-95"
+            >
+              Get Started
+            </button>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="py-8 px-6">
+          <div className="max-w-4xl mx-auto text-center">
+            <p className="text-white/60 text-sm">
+              TIA - Your partner in thyroid health and wellness
             </p>
           </div>
-          
-          <div className="grid md:grid-cols-3 gap-6 text-center">
-            <div className="p-6">
-              <h3 className="text-2xl font-bold text-primary mb-2">Intelligent</h3>
-              <p className="text-muted-foreground">AI-powered analysis of your health data</p>
-            </div>
-            <div className="p-6">
-              <h3 className="text-2xl font-bold text-primary mb-2">Supportive</h3>
-              <p className="text-muted-foreground">24/7 guidance for your thyroid care</p>
-            </div>
-            <div className="p-6">
-              <h3 className="text-2xl font-bold text-primary mb-2">Personalized</h3>
-              <p className="text-muted-foreground">Tailored insights for your unique needs</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-16 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">Features</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Discover how TIA can transform your thyroid health management experience
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8">
-            {features.map((feature, index) => (
-              <FeatureCard 
-                key={index}
-                title={feature.title}
-                description={feature.description}
-                icon={feature.icon}
-                gradientClass={feature.gradientClass}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-12 px-6 bg-muted/20">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="mb-4">
-            <img 
-              src={butterflyLogo} 
-              alt="TIA Logo" 
-              className="w-12 h-12 mx-auto opacity-60"
-            />
-          </div>
-          <p className="text-muted-foreground">
-            TIA - Your partner in thyroid health and wellness
-          </p>
-        </div>
-      </footer>
+        </footer>
+      </div>
     </div>
   );
 };

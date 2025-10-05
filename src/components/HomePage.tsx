@@ -57,18 +57,18 @@ const HomePage = () => {
         {/* About TIA Section */}
         <section className="py-12 px-6">
           <div className="max-w-3xl mx-auto">
-            {/* Gradient Border Wrapper */}
-            <div className="p-[2px] rounded-3xl bg-gradient-to-r from-white to-pink-400 transition-all duration-300 hover:shadow-[0_0_50px_hsl(280,80%,50%,0.6)]">
+            {/* Pink Fill Border */}
+            <div className="p-[2px] rounded-3xl bg-pink-400 transition-all duration-300 hover:shadow-[0_0_50px_hsl(280,80%,50%,0.6)]">
               {/* Glassmorphic Card */}
               <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-8 md:p-12">
-                {/* Heading with Gradient Underline */}
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-300 mb-6 text-center relative inline-block w-full">
+                {/* Heading */}
+                <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 text-center relative inline-block w-full">
                   About TIA
-                  <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-white to-pink-400 rounded-full"></span>
+                  <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-pink-400 rounded-full"></span>
                 </h2>
                 
                 {/* Description with Keywords */}
-                <p className="text-gray-300 text-lg leading-relaxed text-center mt-8">
+                <p className="text-white text-lg leading-relaxed text-center mt-8">
                   TIA (Thyroid Intelligent Assistant) is designed to bridge the gap between patients and healthcare providers in thyroid care. Our{' '}
                   <span className="font-semibold text-purple-400">
                     AI-powered platform

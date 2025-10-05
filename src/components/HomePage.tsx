@@ -70,23 +70,23 @@ const HomePage = () => {
                 {/* Description with Keywords */}
                 <p className="text-white text-lg leading-relaxed text-center mt-8">
                   TIA (Thyroid Intelligent Assistant) is designed to bridge the gap between patients and healthcare providers in thyroid care. Our{' '}
-                  <span className="font-semibold text-purple-400">
+                  <span className="font-semibold text-purple-900">
                     AI-powered platform
                   </span>{' '}
                   helps you understand your{' '}
-                  <span className="font-semibold text-purple-400">
+                  <span className="font-semibold text-purple-900">
                     thyroid health
                   </span>
                   , track{' '}
-                  <span className="font-semibold text-purple-400">
+                  <span className="font-semibold text-purple-900">
                     progress
                   </span>
                   , and make informed decisions with personalized{' '}
-                  <span className="font-semibold text-purple-400">
+                  <span className="font-semibold text-purple-900">
                     insights
                   </span>{' '}
                   and{' '}
-                  <span className="font-semibold text-purple-400">
+                  <span className="font-semibold text-purple-900">
                     support
                   </span>
                   .

@@ -57,8 +57,8 @@ const HomePage = () => {
         {/* About TIA Section */}
         <section className="py-12 px-6">
           <div className="max-w-3xl mx-auto">
-            {/* White Outline Border */}
-            <div className="p-[2px] rounded-3xl bg-white transition-all duration-300 hover:shadow-[0_0_50px_hsl(280,80%,50%,0.6)]">
+            {/* Pink Fill with White Border */}
+            <div className="p-[2px] rounded-3xl bg-pink-400 border-2 border-white transition-all duration-300 hover:shadow-[0_0_50px_hsl(280,80%,50%,0.6)]">
               {/* Glassmorphic Card */}
               <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-8 md:p-12">
                 {/* Heading */}

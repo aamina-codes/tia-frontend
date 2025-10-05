@@ -54,6 +54,48 @@ const HomePage = () => {
           />
         </header>
 
+        {/* About TIA Section */}
+        <section className="py-12 px-6">
+          <div className="max-w-3xl mx-auto">
+            {/* Gradient Border Wrapper */}
+            <div className="p-[2px] rounded-3xl bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 shadow-[0_0_40px_hsl(280,80%,50%,0.4)]">
+              {/* Glassmorphic Card */}
+              <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-8 md:p-12">
+                {/* Heading with Gradient Underline */}
+                <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 text-center relative inline-block w-full">
+                  About TIA
+                  <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 rounded-full"></span>
+                </h2>
+                
+                {/* Description with Gradient Keywords */}
+                <p className="text-gray-300 text-lg leading-relaxed text-center mt-8">
+                  TIA (Thyroid Intelligent Assistant) is designed to bridge the gap between patients and healthcare providers in thyroid care. Our{' '}
+                  <span className="font-semibold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                    AI-powered platform
+                  </span>{' '}
+                  helps you understand your{' '}
+                  <span className="font-semibold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                    thyroid health
+                  </span>
+                  , track{' '}
+                  <span className="font-semibold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                    progress
+                  </span>
+                  , and make informed decisions with personalized{' '}
+                  <span className="font-semibold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                    insights
+                  </span>{' '}
+                  and{' '}
+                  <span className="font-semibold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                    support
+                  </span>
+                  .
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Our Features Section */}
         <section className="py-16 px-6">
           <div className="max-w-6xl mx-auto">

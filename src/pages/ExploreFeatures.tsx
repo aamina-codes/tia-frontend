@@ -15,32 +15,38 @@ const features = [
   {
     icon: FileText,
     title: "Smart Lab Report Analysis",
-    description: "Upload your thyroid test results and get instant AI-powered insights and explanations in simple terms."
+    description: "Upload your thyroid test results and get instant AI-powered insights and explanations in simple terms.",
+    path: "/lab-report"
   },
   {
     icon: Activity,
     title: "Thyroid Health Tracker",
-    description: "Monitor your symptoms, medications, and lifestyle factors all in one intelligent dashboard."
+    description: "Monitor your symptoms, medications, and lifestyle factors all in one intelligent dashboard.",
+    path: "/health-tracker"
   },
   {
     icon: MessageCircle,
     title: "TIA Chatbot",
-    description: "Ask questions anytime and get personalized answers about your thyroid health journey."
+    description: "Ask questions anytime and get personalized answers about your thyroid health journey.",
+    path: "/chatbot"
   },
   {
     icon: Bell,
     title: "Reminders & Alerts",
-    description: "Never miss a medication dose or follow-up appointment with smart notifications."
+    description: "Never miss a medication dose or follow-up appointment with smart notifications.",
+    path: "/reminders"
   },
   {
     icon: BarChart3,
     title: "Progress Dashboard",
-    description: "Visualize your health trends over time with beautiful, easy-to-understand charts."
+    description: "Visualize your health trends over time with beautiful, easy-to-understand charts.",
+    path: "/progress"
   },
   {
     icon: UserPlus,
     title: "Doctor Connect",
-    description: "Share your health data seamlessly with your healthcare provider for better collaboration."
+    description: "Share your health data seamlessly with your healthcare provider for better collaboration.",
+    path: "/doctor-connect"
   }
 ];
 
@@ -77,6 +83,7 @@ const ExploreFeatures = () => {
             {features.map((feature, index) => (
               <Card 
                 key={index}
+                onClick={() => navigate(feature.path)}
                 className="bg-white/5 backdrop-blur-sm border-2 border-pink-400/50 hover:border-pink-400 transition-all duration-300 hover:shadow-[0_0_40px_hsl(330,80%,60%,0.5)] hover:scale-105 cursor-pointer group"
               >
                 <CardContent className="p-8 text-center">

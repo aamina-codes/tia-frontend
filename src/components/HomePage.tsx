@@ -10,8 +10,7 @@ const HomePage = () => {
   };
 
   const handleGetStarted = () => {
-    // Navigate to get started or signup page
-    console.log("Get Started clicked");
+    navigate("/explore");
   };
 
   const features = [

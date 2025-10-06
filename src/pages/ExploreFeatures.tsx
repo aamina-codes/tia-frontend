@@ -7,7 +7,8 @@ import {
   MessageCircle, 
   Bell, 
   BarChart3, 
-  UserPlus 
+  UserPlus,
+  ArrowLeft
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -54,7 +55,7 @@ const ExploreFeatures = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-pink-800 relative overflow-hidden">
+    <div className="min-h-screen bg-purple-900 relative overflow-hidden">
       <Navigation />
       
       {/* Floating Background Shapes */}
@@ -62,8 +63,20 @@ const ExploreFeatures = () => {
       <div className="absolute bottom-20 right-10 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
       <div className="absolute top-1/2 left-1/3 w-56 h-56 bg-pink-400/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }}></div>
 
+      {/* Back Button */}
+      <div className="relative z-10 pt-24 px-6">
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/home')}
+          className="text-white hover:text-pink-300 transition-colors mb-8"
+        >
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          Back
+        </Button>
+      </div>
+
       {/* Hero Section */}
-      <section className="relative z-10 pt-32 pb-16 px-6">
+      <section className="relative z-10 pb-16 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-pink-300 via-purple-300 to-pink-400 bg-clip-text text-transparent leading-tight">
             Discover What TIA Can Do for You
@@ -104,23 +117,6 @@ const ExploreFeatures = () => {
               </Card>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Footer CTA */}
-      <section className="relative z-10 py-20 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <p className="text-2xl md:text-3xl text-white/95 font-light mb-8 leading-relaxed">
-            Experience the future of thyroid care — with intelligence, empathy, and simplicity.
-          </p>
-          
-          <Button 
-            size="lg"
-            onClick={() => navigate('/home')}
-            className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white text-lg px-12 py-6 rounded-full shadow-[0_0_30px_hsl(330,80%,50%,0.5)] hover:shadow-[0_0_50px_hsl(330,80%,50%,0.8)] transition-all duration-300 hover:scale-105"
-          >
-            Start Your TIA Journey
-          </Button>
         </div>
       </section>
 

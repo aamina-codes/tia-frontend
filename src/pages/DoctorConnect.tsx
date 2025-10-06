@@ -9,7 +9,7 @@ const DoctorConnect = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-pink-800 relative overflow-hidden">
+    <div className="min-h-screen bg-purple-900 relative overflow-hidden">
       <Navigation />
       
       {/* Floating Background Shapes */}

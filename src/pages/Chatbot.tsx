@@ -10,7 +10,7 @@ const Chatbot = () => {
   const [started, setStarted] = useState(false);
 
   return (
-    <div className="min-h-screen bg-purple-900 relative overflow-hidden">
+    <div className="min-h-screen bg-deep-dark-purple relative overflow-hidden">
       <Navigation />
       
       {/* Floating Background Shapes with Sparkles */}
@@ -23,7 +23,7 @@ const Chatbot = () => {
         <Button
           variant="ghost"
           onClick={() => navigate('/explore')}
-          className="text-white hover:text-pink-300 transition-colors mb-8"
+          className="text-white hover:text-pink-300 transition-colors mb-8 focus:outline-none focus:ring-0"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
           Back

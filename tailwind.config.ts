@@ -25,6 +25,7 @@ export default {
           hover: "hsl(var(--primary-hover))",
         },
         'purple-splash': "hsl(var(--purple-splash))",
+        'deep-dark-purple': "hsl(var(--deep-dark-purple))",
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
@@ -66,6 +67,7 @@ export default {
         'gradient-butterfly': 'var(--gradient-butterfly)',
         'gradient-splash': 'var(--gradient-splash)',
         'gradient-button': 'var(--gradient-button)',
+        'icon-glow': 'var(--icon-glow)',
       },
       boxShadow: {
         'soft': 'var(--shadow-soft)',

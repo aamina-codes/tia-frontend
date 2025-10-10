@@ -55,7 +55,7 @@ const ExploreFeatures = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-purple-900 relative overflow-hidden">
+    <div className="min-h-screen bg-deep-dark-purple relative overflow-hidden">
       <Navigation />
       
       {/* Floating Background Shapes */}
@@ -68,7 +68,7 @@ const ExploreFeatures = () => {
         <Button
           variant="ghost"
           onClick={() => navigate('/home')}
-          className="text-white hover:text-pink-300 transition-colors mb-8"
+          className="text-white hover:text-pink-300 transition-colors mb-8 focus:outline-none focus:ring-0"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
           Back
@@ -101,8 +101,8 @@ const ExploreFeatures = () => {
               >
                 <CardContent className="p-8 text-center">
                   <div className="mb-6 flex justify-center">
-                    <div className="p-4 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 group-hover:from-pink-500/30 group-hover:to-purple-500/30 transition-all duration-300">
-                      <feature.icon className="w-10 h-10 text-pink-300" />
+                    <div className="p-4 rounded-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 group-hover:from-blue-500/30 group-hover:via-purple-500/30 group-hover:to-pink-500/30 transition-all duration-300">
+                      <feature.icon className="w-10 h-10 bg-icon-glow bg-clip-text text-transparent" style={{ WebkitTextFillColor: 'transparent', backgroundClip: 'text' }} />
                     </div>
                   </div>
                   

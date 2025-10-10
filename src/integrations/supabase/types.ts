@@ -14,7 +14,169 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      health_tracker: {
+        Row: {
+          created_at: string
+          date: string
+          energy_level: number | null
+          id: string
+          mood: string | null
+          notes: string | null
+          synced_from_report_id: string | null
+          t3_level: number | null
+          t4_level: number | null
+          tsh_level: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          energy_level?: number | null
+          id?: string
+          mood?: string | null
+          notes?: string | null
+          synced_from_report_id?: string | null
+          t3_level?: number | null
+          t4_level?: number | null
+          tsh_level?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          energy_level?: number | null
+          id?: string
+          mood?: string | null
+          notes?: string | null
+          synced_from_report_id?: string | null
+          t3_level?: number | null
+          t4_level?: number | null
+          tsh_level?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "health_tracker_synced_from_report_id_fkey"
+            columns: ["synced_from_report_id"]
+            isOneToOne: false
+            referencedRelation: "lab_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lab_reports: {
+        Row: {
+          ai_recommendations: string | null
+          ai_summary: string | null
+          created_at: string
+          file_size: number | null
+          id: string
+          report_name: string
+          report_type: string
+          report_url: string | null
+          t3_level: number | null
+          t3_status: string | null
+          t4_level: number | null
+          t4_status: string | null
+          tsh_level: number | null
+          tsh_status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_recommendations?: string | null
+          ai_summary?: string | null
+          created_at?: string
+          file_size?: number | null
+          id?: string
+          report_name: string
+          report_type: string
+          report_url?: string | null
+          t3_level?: number | null
+          t3_status?: string | null
+          t4_level?: number | null
+          t4_status?: string | null
+          tsh_level?: number | null
+          tsh_status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_recommendations?: string | null
+          ai_summary?: string | null
+          created_at?: string
+          file_size?: number | null
+          id?: string
+          report_name?: string
+          report_type?: string
+          report_url?: string | null
+          t3_level?: number | null
+          t3_status?: string | null
+          t4_level?: number | null
+          t4_status?: string | null
+          tsh_level?: number | null
+          tsh_status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      reminders: {
+        Row: {
+          created_at: string
+          description: string | null
+          frequency: string | null
+          id: string
+          is_active: boolean
+          reminder_date: string
+          reminder_time: string | null
+          reminder_type: string
+          synced_from_report_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          frequency?: string | null
+          id?: string
+          is_active?: boolean
+          reminder_date: string
+          reminder_time?: string | null
+          reminder_type: string
+          synced_from_report_id?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          frequency?: string | null
+          id?: string
+          is_active?: boolean
+          reminder_date?: string
+          reminder_time?: string | null
+          reminder_type?: string
+          synced_from_report_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminders_synced_from_report_id_fkey"
+            columns: ["synced_from_report_id"]
+            isOneToOne: false
+            referencedRelation: "lab_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

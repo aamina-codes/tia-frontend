@@ -6,7 +6,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import tiaLogo from "@/assets/tia-butterfly-logo.png";
-import authIllustration from "@/assets/auth-illustration.jpeg";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -89,36 +88,20 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: '#1E003D' }}>
-      {/* Left Side - Illustration */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/50 via-pink-900/30 to-blue-900/50" />
-        <div className="relative z-10 flex flex-col items-center justify-center p-12 w-full">
-          <div className="flex items-center gap-3 mb-8">
-            <img src={tiaLogo} alt="TIA Logo" className="w-16 h-16" />
-            <div>
-              <h1 className="text-white text-3xl font-bold">TIA</h1>
-              <p className="text-white/80 text-sm">Thyroid Intelligent Assistant</p>
-            </div>
-          </div>
-          <img 
-            src={authIllustration} 
-            alt="Health Illustration" 
-            className="max-w-md w-full rounded-2xl shadow-2xl"
-          />
-        </div>
-      </div>
+    <div className="min-h-screen flex items-center justify-center p-8" style={{ backgroundColor: '#1E003D' }}>
+      {/* Floating Background Shapes */}
+      <div className="absolute top-20 left-10 w-64 h-64 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-full blur-3xl animate-float"></div>
+      <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-br from-pink-500/20 via-purple-500/20 to-blue-500/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
 
-      {/* Right Side - Auth Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-            <img src={tiaLogo} alt="TIA Logo" className="w-12 h-12" />
-            <div>
-              <h1 className="text-white text-2xl font-bold">TIA</h1>
-              <p className="text-white/80 text-xs">Thyroid Intelligent Assistant</p>
-            </div>
+      <div className="w-full max-w-md relative z-10">
+        {/* Logo and Title */}
+        <div className="flex flex-col items-center justify-center gap-4 mb-8">
+          <img src={tiaLogo} alt="TIA Logo" className="w-20 h-20 drop-shadow-[0_0_20px_rgba(236,72,153,0.5)]" />
+          <div className="text-center">
+            <h1 className="text-white text-3xl font-bold mb-1">TIA</h1>
+            <p className="text-white/90 text-sm">Thyroid Intelligent Assistant</p>
           </div>
+        </div>
 
           <div className="bg-white/5 backdrop-blur-md rounded-3xl p-8 border border-white/10">
             <Button
@@ -242,7 +225,6 @@ const Auth = () => {
                 {isLogin ? "Sign Up" : "Login"}
               </button>
             </p>
-          </div>
         </div>
       </div>
     </div>

@@ -1,22 +1,91 @@
-import { ArrowLeft, MessageCircle, Send } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { ArrowLeft, Send, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
-import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import tiaLogo from "@/assets/tia-butterfly-logo.png";
+
+interface Message {
+  role: "user" | "assistant";
+  content: string;
+}
 
 const Chatbot = () => {
   const navigate = useNavigate();
-  const [started, setStarted] = useState(false);
+  const { toast } = useToast();
+  const [messages, setMessages] = useState<Message[]>([
+    { role: "assistant", content: "🦋 Hi! I'm TIA, your Thyroid Intelligent Assistant. How can I help you today?" }
+  ]);
+  const [inputMessage, setInputMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleSendMessage = async () => {
+    if (inputMessage.trim() && !isLoading) {
+      const userMessage = inputMessage;
+      setMessages(prev => [...prev, { role: "user", content: userMessage }]);
+      setInputMessage("");
+      setIsLoading(true);
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('chat', {
+          body: { message: userMessage }
+        });
+
+        if (error) {
+          console.error('Chat error:', error);
+          toast({
+            title: "Error",
+            description: "Failed to get response. Please try again.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        setMessages(prev => [...prev, { 
+          role: "assistant", 
+          content: data.response
+        }]);
+      } catch (error) {
+        console.error('Chat error:', error);
+        toast({
+          title: "Error",
+          description: "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-deep-dark-purple relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden" style={{ backgroundColor: '#1E003D' }}>
       <Navigation />
       
-      {/* Floating Background Shapes with Sparkles */}
-      <div className="absolute top-20 left-10 w-64 h-64 bg-pink-500/20 rounded-full blur-3xl animate-float"></div>
-      <div className="absolute bottom-20 right-10 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
-      <div className="absolute top-1/3 right-1/4 w-40 h-40 bg-pink-400/10 rounded-full blur-2xl animate-float" style={{ animationDelay: '2s' }}></div>
+      {/* Floating Background Shapes */}
+      <div className="absolute top-20 left-10 w-64 h-64 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-full blur-3xl animate-float"></div>
+      <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-br from-pink-500/20 via-purple-500/20 to-blue-500/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
 
       {/* Back Button */}
       <div className="relative z-10 pt-24 px-6">
@@ -30,121 +99,96 @@ const Chatbot = () => {
         </Button>
       </div>
 
-      {/* Chat Interface */}
-      <section className="relative z-10 px-6 pb-20">
-        <div className="max-w-4xl mx-auto">
-          {!started ? (
-            // Welcome Screen
-            <div className="text-center">
-              <div className="mb-8 flex justify-center">
-                <div className="p-8 rounded-full bg-gradient-to-br from-pink-500/30 to-purple-500/30 animate-pulse">
-                  <img 
-                    src="/src/assets/tia-butterfly-logo.png" 
-                    alt="TIA Butterfly" 
-                    className="w-32 h-32"
-                  />
-                </div>
-              </div>
-              
-              <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-pink-300 via-purple-300 to-pink-400 bg-clip-text text-transparent">
-                Chat with TIA
-              </h1>
-              
-              <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-                Your empathetic AI companion for thyroid health questions and support.
-              </p>
-              
-              <Button 
-                size="lg"
-                onClick={() => setStarted(true)}
-                className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white text-lg px-12 py-6 rounded-full shadow-[0_0_30px_hsl(330,80%,50%,0.5)] hover:shadow-[0_0_50px_hsl(330,80%,50%,0.8)] transition-all duration-300 hover:scale-105"
-              >
-                <MessageCircle className="w-6 h-6 mr-2" />
-                Start Chat
-              </Button>
+      {/* Header Section */}
+      <section className="relative z-10 px-6 pb-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <div className="p-4 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 animate-pulse">
+              <img src={tiaLogo} alt="TIA" className="w-16 h-16" />
             </div>
-          ) : (
-            // Chat Interface
-            <Card className="bg-white/5 backdrop-blur-sm border-2 border-pink-400/50 transition-all duration-300">
-              <CardContent className="p-0">
-                {/* Chat Header */}
-                <div className="p-6 border-b border-white/10 flex items-center space-x-4">
-                  <div className="p-3 rounded-full bg-gradient-to-br from-pink-500/30 to-purple-500/30">
-                    <img 
-                      src="/src/assets/tia-butterfly-logo.png" 
-                      alt="TIA" 
-                      className="w-12 h-12"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white">TIA Assistant</h3>
-                    <p className="text-white/60 text-sm">Always here to help</p>
-                  </div>
-                </div>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-300 via-purple-300 to-pink-400 bg-clip-text text-transparent">
+            🦋 Chat with TIA
+          </h1>
+          <p className="text-xl text-white/90 max-w-2xl mx-auto">
+            Your empathetic AI companion for thyroid health questions and support.
+          </p>
+        </div>
+      </section>
 
-                {/* Chat Messages */}
-                <div className="p-6 h-96 overflow-y-auto space-y-4">
-                  {/* TIA Message */}
-                  <div className="flex items-start space-x-3">
-                    <div className="p-2 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex-shrink-0">
-                      <img 
-                        src="/src/assets/tia-butterfly-logo.png" 
-                        alt="TIA" 
-                        className="w-8 h-8"
-                      />
-                    </div>
-                    <div className="bg-gradient-to-r from-purple-500/30 to-blue-500/30 rounded-2xl rounded-tl-none p-4 max-w-md">
-                      <p className="text-white">
-                        Hello! I'm TIA, your thyroid health companion. How can I help you today? 💜
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* User Message Example */}
-                  <div className="flex items-start space-x-3 justify-end">
-                    <div className="bg-gradient-to-r from-pink-500/40 to-white/30 rounded-2xl rounded-tr-none p-4 max-w-md">
-                      <p className="text-white">
-                        Can you help me understand my TSH levels?
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* TIA Response */}
-                  <div className="flex items-start space-x-3">
-                    <div className="p-2 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex-shrink-0">
-                      <img 
-                        src="/src/assets/tia-butterfly-logo.png" 
-                        alt="TIA" 
-                        className="w-8 h-8"
-                      />
-                    </div>
-                    <div className="bg-gradient-to-r from-purple-500/30 to-blue-500/30 rounded-2xl rounded-tl-none p-4 max-w-md">
-                      <p className="text-white">
-                        Of course! TSH (Thyroid Stimulating Hormone) helps regulate your thyroid function. Normal ranges are typically 0.4-4.0 mIU/L. Would you like me to explain what your specific levels mean?
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Chat Input */}
-                <div className="p-6 border-t border-white/10">
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="text"
-                      placeholder="Type your message..."
-                      className="flex-1 bg-white/10 border border-pink-400/30 rounded-full px-6 py-3 text-white placeholder:text-white/50 focus:outline-none focus:border-pink-400 transition-all"
-                    />
-                    <Button 
-                      size="icon"
-                      className="rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 shadow-[0_0_20px_hsl(330,80%,50%,0.4)] hover:shadow-[0_0_30px_hsl(330,80%,50%,0.6)] transition-all duration-300"
+      {/* Chat Container */}
+      <section className="relative z-10 px-6 pb-32">
+        <div className="max-w-4xl mx-auto">
+          <Card className="bg-white/5 backdrop-blur-sm border-2 border-pink-400/50 hover:border-pink-400 transition-all duration-300">
+            <CardContent className="p-6">
+              {/* Messages Area */}
+              <div className="h-[500px] overflow-y-auto mb-4 space-y-4 pr-2">
+                {messages.map((message, index) => (
+                  <div
+                    key={index}
+                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} items-start gap-3`}
+                  >
+                    {message.role === "assistant" && (
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 border border-pink-400/30 flex items-center justify-center">
+                        <img src={tiaLogo} alt="TIA" className="w-6 h-6" />
+                      </div>
+                    )}
+                    
+                    <div 
+                      className={`max-w-[70%] rounded-2xl p-4 ${
+                        message.role === "user" 
+                          ? "bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-400/30" 
+                          : "bg-white/5 border border-white/10"
+                      }`}
                     >
-                      <Send className="w-5 h-5" />
-                    </Button>
+                      <p className="text-white/90 leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                    </div>
+
+                    {message.role === "user" && (
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-400/30 flex items-center justify-center">
+                        <svg className="w-5 h-5 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                ))}
+                
+                {isLoading && (
+                  <div className="flex justify-start items-start gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 border border-pink-400/30 flex items-center justify-center">
+                      <img src={tiaLogo} alt="TIA" className="w-6 h-6" />
+                    </div>
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center space-x-2">
+                      <Loader2 className="w-5 h-5 text-pink-300 animate-spin" />
+                      <p className="text-white/90">TIA is thinking...</p>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input Area */}
+              <div className="flex items-center gap-3">
+                <Input
+                  type="text"
+                  placeholder="Ask me anything about thyroid health..."
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  disabled={isLoading}
+                  className="flex-1 bg-white/10 border-pink-400/30 text-white placeholder:text-white/50 rounded-full px-6 py-6 focus:ring-2 focus:ring-pink-400"
+                />
+                <Button 
+                  onClick={handleSendMessage}
+                  disabled={isLoading || !inputMessage.trim()}
+                  className="rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white p-6 shadow-[0_0_20px_rgba(236,72,153,0.4)] hover:shadow-[0_0_30px_rgba(236,72,153,0.6)] transition-all duration-300 disabled:opacity-50"
+                >
+                  <Send className="w-5 h-5" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
     </div>

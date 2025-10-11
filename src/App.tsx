@@ -12,6 +12,7 @@ import Chatbot from "./pages/Chatbot";
 import Reminders from "./pages/Reminders";
 import ProgressDashboard from "./pages/ProgressDashboard";
 import DoctorConnect from "./pages/DoctorConnect";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/reminders" element={<Reminders />} />
           <Route path="/progress" element={<ProgressDashboard />} />
           <Route path="/doctor-connect" element={<DoctorConnect />} />
+          <Route path="/auth" element={<Auth />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

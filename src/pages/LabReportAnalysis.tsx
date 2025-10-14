@@ -27,6 +27,7 @@ const LabReportAnalysis = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [progress, setProgress] = useState(0);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -49,6 +50,8 @@ const LabReportAnalysis = () => {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    setSelectedFile(file);
 
     // Check file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
@@ -195,14 +198,13 @@ const LabReportAnalysis = () => {
 
       {/* Back Button */}
       <div className="relative z-10 pt-24 px-6">
-        <Button
-          variant="ghost"
+        <button
           onClick={() => navigate('/explore')}
-          className="text-white hover:bg-white/10 transition-colors mb-8 focus:outline-none focus:ring-0"
+          className="group flex items-center text-white/80 hover:text-white transition-all duration-300 mb-8"
         >
-          <ArrowLeft className="w-5 h-5 mr-2" />
-          Back
-        </Button>
+          <ArrowLeft className="w-5 h-5 mr-2 group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300" />
+          <span className="group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300">Back</span>
+        </button>
       </div>
 
       {/* Header Section */}
@@ -220,47 +222,54 @@ const LabReportAnalysis = () => {
       {/* Upload Section */}
       <section className="relative z-10 px-6 pb-12">
         <div className="max-w-4xl mx-auto">
-          <Card className="bg-white/5 backdrop-blur-sm border-2 border-pink-400/50 hover:border-pink-400 transition-all duration-300 hover:shadow-[0_0_40px_rgba(236,72,153,0.5)]">
+          <Card className="bg-white/5 backdrop-blur-sm border-2 border-pink-400/50 hover:border-pink-400 transition-all duration-500 shadow-[0_0_60px_rgba(236,72,153,0.3)] hover:shadow-[0_0_80px_rgba(236,72,153,0.6)] rounded-3xl">
             <CardContent className="p-12">
               <div className="flex flex-col items-center justify-center space-y-6">
-                <div className="p-6 rounded-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20">
+                <div className="p-8 rounded-full bg-gradient-to-br from-pink-500/20 via-purple-500/20 to-pink-500/20 shadow-[0_0_40px_rgba(236,72,153,0.4)] animate-pulse">
                   {isUploading ? (
-                    <Loader2 className="w-16 h-16 text-pink-300 animate-spin" />
+                    <Loader2 className="w-20 h-20 text-pink-300 animate-spin drop-shadow-[0_0_12px_rgba(236,72,153,0.8)]" />
+                  ) : selectedFile ? (
+                    <CheckCircle className="w-20 h-20 text-green-400 drop-shadow-[0_0_16px_rgba(34,197,94,0.8)] animate-scale-in" />
                   ) : (
-                    <Upload className="w-16 h-16 text-pink-300" />
+                    <Upload className="w-20 h-20 text-pink-300 drop-shadow-[0_0_12px_rgba(236,72,153,0.6)]" />
                   )}
                 </div>
                 
-                <h3 className="text-2xl font-bold text-white">
-                  {isUploading ? "Analyzing Your Report..." : "Upload Your Thyroid Report"}
+                <h3 className="text-3xl font-bold text-white drop-shadow-[0_0_20px_rgba(236,72,153,0.5)]">
+                  {isUploading ? "🦋 Analyzing Your Report..." : selectedFile ? "✨ File Selected!" : "🦋 Upload Your Thyroid Report"}
                 </h3>
                 
-                <p className="text-white/80 text-center max-w-md">
+                {selectedFile && !isUploading && (
+                  <div className="flex items-center space-x-3 px-6 py-3 bg-green-500/10 border border-green-400/50 rounded-full animate-fade-in">
+                    <CheckCircle className="w-5 h-5 text-green-400 drop-shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
+                    <span className="text-white/90 font-medium">{selectedFile.name}</span>
+                  </div>
+                )}
+                
+                <p className="text-white/70 text-center max-w-md text-lg">
                   {isUploading 
-                    ? "🦋 TIA is analyzing your report with AI-powered insights"
-                    : "Drag and drop your thyroid test report here, or click to browse"}
+                    ? "TIA is reading your report with compassionate AI insights..."
+                    : selectedFile 
+                    ? "Ready to analyze! Click the button below to continue"
+                    : "Supported formats: PDF, PNG, JPG"}
                 </p>
 
                 {isUploading && (
-                  <div className="w-full max-w-md">
-                    <Progress value={progress} className="h-2" />
-                    <p className="text-white/60 text-sm text-center mt-2">
-                      {isAnalyzing ? "Running AI analysis..." : `Uploading... ${progress}%`}
+                  <div className="w-full max-w-md space-y-3 animate-fade-in">
+                    <Progress value={progress} className="h-3 shadow-[0_0_20px_rgba(236,72,153,0.4)]" />
+                    <p className="text-pink-300 text-sm text-center font-medium drop-shadow-[0_0_8px_rgba(236,72,153,0.6)]">
+                      {isAnalyzing ? "✨ Running AI analysis..." : `📤 Uploading... ${progress}%`}
                     </p>
                   </div>
                 )}
                 
-                {!isUploading && (
+                {!isUploading && !selectedFile && (
                   <>
-                    <label htmlFor="file-upload">
-                      <Button 
-                        size="lg"
-                        className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white px-8 py-6 rounded-full shadow-[0_0_30px_rgba(236,72,153,0.5)] hover:shadow-[0_0_50px_rgba(236,72,153,0.8)] transition-all duration-300 hover:scale-105"
-                        disabled={isUploading}
-                      >
-                        <Upload className="w-5 h-5 mr-2" />
-                        Choose File
-                      </Button>
+                    <label htmlFor="file-upload" className="cursor-pointer">
+                      <div className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white px-10 py-5 rounded-full shadow-[0_0_40px_rgba(236,72,153,0.6)] hover:shadow-[0_0_60px_rgba(236,72,153,0.9)] transition-all duration-500 hover:scale-110 flex items-center space-x-3">
+                        <Upload className="w-6 h-6" />
+                        <span className="text-lg font-semibold">Choose File</span>
+                      </div>
                     </label>
                     <input
                       id="file-upload"
@@ -272,10 +281,32 @@ const LabReportAnalysis = () => {
                     />
                   </>
                 )}
-                
-                <p className="text-white/60 text-sm">
-                  Supported formats: PDF, JPG, PNG, TXT (Max 10MB)
-                </p>
+
+                {selectedFile && !isUploading && (
+                  <div className="flex space-x-4 animate-fade-in">
+                    <button
+                      onClick={() => {
+                        setSelectedFile(null);
+                        const input = document.getElementById('file-upload') as HTMLInputElement;
+                        if (input) input.value = '';
+                      }}
+                      className="px-8 py-3 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/30 hover:border-white/50 transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+                    >
+                      Choose Different File
+                    </button>
+                    <button
+                      onClick={() => {
+                        const input = document.getElementById('file-upload') as HTMLInputElement;
+                        if (input && input.files?.[0]) {
+                          handleFileUpload({ target: input } as any);
+                        }
+                      }}
+                      className="px-8 py-3 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white shadow-[0_0_30px_rgba(236,72,153,0.6)] hover:shadow-[0_0_50px_rgba(236,72,153,0.9)] transition-all duration-300 hover:scale-105 font-semibold"
+                    >
+                      Analyze Report
+                    </button>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

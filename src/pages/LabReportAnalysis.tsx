@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import Navigation from "@/components/Navigation";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import tiaLogo from "@/assets/tia-butterfly-logo.png";
 
 interface AnalysisResult {
   tsh_level: number | null;
@@ -81,99 +82,78 @@ const LabReportAnalysis = () => {
 
       setProgress(40);
 
-      // Read file content
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const content = e.target?.result as string;
-        
-        setProgress(60);
-        setIsAnalyzing(true);
+      // Upload file to Supabase storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('lab-reports')
+        .upload(fileName, file);
 
-        // Extract text based on file type
-        let reportText = "";
-        if (file.type === "application/pdf") {
-          reportText = content; // In production, you'd use a PDF parser
-          toast({
-            title: "PDF Support",
-            description: "For best results, try uploading an image or text file",
-          });
-        } else if (file.type.startsWith("image/")) {
-          reportText = "Image analysis coming soon. Please upload a text-based report for now.";
-        } else {
-          reportText = content;
-        }
-
-        setProgress(80);
-
-        // Call edge function for AI analysis
-        const { data, error } = await supabase.functions.invoke('analyze-lab-report', {
-          body: { reportText, userId: user.id }
-        });
-
-        if (error) {
-          console.error('Analysis error:', error);
-          toast({
-            title: "Analysis failed",
-            description: error.message || "Unable to analyze report. Please try again.",
-            variant: "destructive",
-          });
-          setIsAnalyzing(false);
-          setIsUploading(false);
-          setProgress(0);
-          return;
-        }
-
-        setProgress(100);
-
-        // Save report to database
-        const { error: saveError } = await supabase
-          .from('lab_reports')
-          .insert({
-            user_id: user.id,
-            report_name: file.name,
-            report_type: file.type,
-            file_size: file.size,
-            tsh_level: data.tsh_level,
-            t3_level: data.t3_level,
-            t4_level: data.t4_level,
-            tsh_status: data.tsh_status,
-            t3_status: data.t3_status,
-            t4_status: data.t4_status,
-            ai_summary: data.summary,
-            ai_recommendations: data.recommendations?.join('\n'),
-          });
-
-        if (saveError) {
-          console.error('Save error:', saveError);
-        }
-
-        setAnalysisResult(data);
-        
-        toast({
-          title: "🦋 Analysis Complete!",
-          description: "Your report has been analyzed and synced with your tracker",
-        });
-
-        setIsAnalyzing(false);
-        setIsUploading(false);
-        setProgress(0);
-      };
-
-      reader.onerror = () => {
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
         toast({
           title: "Upload failed",
-          description: "Unable to read file. Please try again.",
+          description: uploadError.message || "Unable to upload file. Please try again.",
           variant: "destructive",
         });
         setIsUploading(false);
         setProgress(0);
-      };
-
-      if (file.type.startsWith("image/")) {
-        reader.readAsDataURL(file);
-      } else {
-        reader.readAsText(file);
+        return;
       }
+
+      setProgress(60);
+      setIsAnalyzing(true);
+
+      // Get public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from('lab-reports')
+        .getPublicUrl(fileName);
+
+      setProgress(70);
+
+      // Call edge function for AI analysis
+      const { data, error } = await supabase.functions.invoke('analyze-lab-report', {
+        body: { 
+          fileUrl: publicUrl,
+          fileName: file.name,
+          fileType: file.type,
+          userId: user.id 
+        }
+      });
+
+      if (error) {
+        console.error('Analysis error:', error);
+        toast({
+          title: "Analysis failed",
+          description: error.message || "Unable to analyze report. Please try again.",
+          variant: "destructive",
+        });
+        setIsAnalyzing(false);
+        setIsUploading(false);
+        setProgress(0);
+        return;
+      }
+
+      setProgress(100);
+
+      setAnalysisResult(data);
+      
+      toast({
+        title: "✨ Report uploaded successfully!",
+        description: "TIA is analyzing your thyroid health.",
+      });
+
+      setTimeout(() => {
+        toast({
+          title: "🦋 Analysis Complete!",
+          description: "Your report has been analyzed and synced with your tracker",
+        });
+      }, 1500);
+
+      setIsAnalyzing(false);
+      setIsUploading(false);
+      setProgress(0);
 
     } catch (error) {
       console.error('Upload error:', error);
@@ -202,19 +182,31 @@ const LabReportAnalysis = () => {
           onClick={() => navigate('/explore')}
           className="group flex items-center text-white/80 hover:text-white transition-all duration-300 mb-8"
         >
-          <ArrowLeft className="w-5 h-5 mr-2 group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300" />
-          <span className="group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300">Back</span>
+          <ArrowLeft className="w-5 h-5 mr-2 group-hover:drop-shadow-[0_0_12px_rgba(255,255,255,0.9)] transition-all duration-300" />
+          <span className="group-hover:drop-shadow-[0_0_12px_rgba(255,255,255,0.9)] transition-all duration-300">Back to Features</span>
         </button>
       </div>
 
       {/* Header Section */}
       <section className="relative z-10 px-6 pb-12">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-300 via-purple-300 to-pink-400 bg-clip-text text-transparent">
-            🦋 Smart Lab Report Analysis
+          <div className="flex justify-center mb-6">
+            <div className="relative w-24 h-24 animate-float">
+              <img 
+                src={tiaLogo} 
+                alt="TIA Butterfly Logo" 
+                className="w-full h-full object-contain drop-shadow-[0_0_30px_rgba(236,72,153,0.8)]"
+              />
+            </div>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-blue-300 via-purple-300 to-pink-400 bg-clip-text text-transparent">
+            Smart Lab Report Analysis
           </h1>
-          <p className="text-xl text-white/90 max-w-2xl mx-auto">
+          <p className="text-xl text-white/90 max-w-2xl mx-auto mb-2">
             Upload your thyroid test reports (TSH, T3, T4) and let TIA analyze them with AI-powered insights.
+          </p>
+          <p className="text-sm text-pink-300/70 italic">
+            ✨ Your reports are securely stored and automatically synced across your health dashboard
           </p>
         </div>
       </section>

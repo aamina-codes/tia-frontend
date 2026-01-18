@@ -48,11 +48,9 @@ const LabReportAnalysis = () => {
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    setSelectedFile(file);
 
     // Check file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
@@ -64,90 +62,66 @@ const LabReportAnalysis = () => {
       return;
     }
 
+    setSelectedFile(file);
+    setAnalysisResult(null);
+  };
+
+  const handleAnalyzeReport = async () => {
+    if (!selectedFile) return;
+
     setIsUploading(true);
     setProgress(20);
 
     try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Authentication required",
-          description: "Please sign in to upload reports",
-          variant: "destructive",
-        });
-        setIsUploading(false);
-        return;
-      }
-
       setProgress(40);
-
-      // Upload file to Supabase storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-      
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('lab-reports')
-        .upload(fileName, file);
-
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        toast({
-          title: "Upload failed",
-          description: uploadError.message || "Unable to upload file. Please try again.",
-          variant: "destructive",
-        });
-        setIsUploading(false);
-        setProgress(0);
-        return;
-      }
-
-      setProgress(60);
       setIsAnalyzing(true);
 
-      // Get public URL for the uploaded file
-      const { data: { publicUrl } } = supabase.storage
-        .from('lab-reports')
-        .getPublicUrl(fileName);
+      // Create FormData and send to FastAPI backend
+      const formData = new FormData();
+      formData.append('file', selectedFile);
 
-      setProgress(70);
+      setProgress(60);
 
-      // Call edge function for AI analysis
-      const { data, error } = await supabase.functions.invoke('analyze-lab-report', {
-        body: { 
-          fileUrl: publicUrl,
-          fileName: file.name,
-          fileType: file.type,
-          userId: user.id 
-        }
+      const response = await fetch('https://carlish-colten-readerly.ngrok-free.dev/upload', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+        },
       });
 
-      if (error) {
-        console.error('Analysis error:', error);
-        toast({
-          title: "Analysis failed",
-          description: error.message || "Unable to analyze report. Please try again.",
-          variant: "destructive",
-        });
-        setIsAnalyzing(false);
-        setIsUploading(false);
-        setProgress(0);
-        return;
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status} ${response.statusText}`);
       }
+
+      setProgress(80);
+
+      const data = await response.json();
 
       setProgress(100);
 
-      setAnalysisResult(data);
-      
+      // Map the API response to our AnalysisResult interface
+      setAnalysisResult({
+        tsh_level: data.tsh_level ?? null,
+        t3_level: data.t3_level ?? null,
+        t4_level: data.t4_level ?? null,
+        tsh_status: data.tsh_status ?? 'unknown',
+        t3_status: data.t3_status ?? 'unknown',
+        t4_status: data.t4_status ?? 'unknown',
+        summary: data.summary ?? data.message ?? 'Analysis complete',
+        recommendations: data.recommendations ?? [],
+        synced: data.synced ?? false,
+      });
+
       toast({
         title: "✨ Report uploaded successfully!",
-        description: "TIA is analyzing your thyroid health.",
+        description: "TIA has analyzed your thyroid health.",
       });
 
       setTimeout(() => {
         toast({
           title: "🦋 Analysis Complete!",
-          description: "Your report has been analyzed and synced with your tracker",
+          description: "Your report has been analyzed successfully",
         });
       }, 1500);
 
@@ -158,8 +132,8 @@ const LabReportAnalysis = () => {
     } catch (error) {
       console.error('Upload error:', error);
       toast({
-        title: "Upload failed",
-        description: "Something went wrong. Please try again.",
+        title: "Analysis failed",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
         variant: "destructive",
       });
       setIsUploading(false);
@@ -268,7 +242,7 @@ const LabReportAnalysis = () => {
                       type="file"
                       className="hidden"
                       accept=".pdf,.jpg,.jpeg,.png,.txt"
-                      onChange={handleFileUpload}
+                      onChange={handleFileSelect}
                       disabled={isUploading}
                     />
                   </>
@@ -287,12 +261,7 @@ const LabReportAnalysis = () => {
                       Choose Different File
                     </button>
                     <button
-                      onClick={() => {
-                        const input = document.getElementById('file-upload') as HTMLInputElement;
-                        if (input && input.files?.[0]) {
-                          handleFileUpload({ target: input } as any);
-                        }
-                      }}
+                      onClick={handleAnalyzeReport}
                       className="px-8 py-3 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white shadow-[0_0_30px_rgba(236,72,153,0.6)] hover:shadow-[0_0_50px_rgba(236,72,153,0.9)] transition-all duration-300 hover:scale-105 font-semibold"
                     >
                       Analyze Report

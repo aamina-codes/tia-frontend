@@ -82,12 +82,9 @@ const LabReportAnalysis = () => {
 
       setProgress(60);
 
-      const response = await fetch('https://carlish-colten-readerly.ngrok-free.dev/upload', {
+      const response = await fetch('https://aggregate-prairie-newer-brave.trycloudflare.com/upload_file', {
         method: 'POST',
         body: formData,
-        headers: {
-          'ngrok-skip-browser-warning': 'true',
-        },
       });
 
       if (!response.ok) {

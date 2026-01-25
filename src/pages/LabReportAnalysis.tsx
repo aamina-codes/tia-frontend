@@ -82,7 +82,7 @@ const LabReportAnalysis = () => {
 
       setProgress(60);
 
-      const response = await fetch('https://aggregate-prairie-newer-brave.trycloudflare.com/upload_file', {
+      const response = await fetch('https://strategic-privileges-lecture-role.trycloudflare.com/upload_file', {
         method: 'POST',
         body: formData,
       });

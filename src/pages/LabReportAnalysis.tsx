@@ -30,6 +30,75 @@ const LabReportAnalysis = () => {
   const [progress, setProgress] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
+  // Helper function to determine status based on thyroid values
+  const determineStatus = (value: number, type: 'TSH' | 'T3' | 'T4'): string => {
+    if (type === 'TSH') {
+      if (value < 0.4) return 'low';
+      if (value > 4.0) return 'elevated';
+      return 'normal';
+    } else if (type === 'T3') {
+      if (value < 80) return 'low';
+      if (value > 200) return 'elevated';
+      return 'normal';
+    } else if (type === 'T4') {
+      if (value < 5) return 'low';
+      if (value > 12) return 'elevated';
+      return 'normal';
+    }
+    return 'unknown';
+  };
+
+  // Helper function to generate summary based on values
+  const generateSummary = (tsh: number | null, t3: number | null, t4: number | null): string => {
+    const statuses = [];
+    if (tsh !== null) statuses.push(`TSH is ${determineStatus(tsh, 'TSH')}`);
+    if (t3 !== null) statuses.push(`T3 is ${determineStatus(t3, 'T3')}`);
+    if (t4 !== null) statuses.push(`T4 is ${determineStatus(t4, 'T4')}`);
+
+    if (statuses.length === 0) return 'Lab report analyzed. Please consult your doctor for interpretation.';
+
+    const hasAbnormal = statuses.some(s => s.includes('elevated') || s.includes('low'));
+    
+    if (!hasAbnormal) {
+      return `Your thyroid levels appear to be within normal ranges. ${statuses.join(', ')}. Continue regular monitoring.`;
+    }
+
+    return `Your thyroid levels show some variations that warrant attention. ${statuses.join(', ')}. Please consult your healthcare provider for personalized guidance.`;
+  };
+
+  // Helper function to generate recommendations
+  const generateRecommendations = (tsh: number | null, t3: number | null, t4: number | null): string[] => {
+    const recommendations: string[] = [];
+
+    if (tsh !== null && determineStatus(tsh, 'TSH') === 'elevated') {
+      recommendations.push('Your TSH is elevated. This may indicate hypothyroidism. Consider scheduling an appointment with your endocrinologist.');
+    }
+    if (tsh !== null && determineStatus(tsh, 'TSH') === 'low') {
+      recommendations.push('Your TSH is low. This may indicate hyperthyroidism. Consult your doctor for further evaluation.');
+    }
+
+    if (t4 !== null && determineStatus(t4, 'T4') === 'low') {
+      recommendations.push('Your T4 level is low. Ensure adequate iodine intake and discuss thyroid medication with your doctor.');
+    }
+    if (t4 !== null && determineStatus(t4, 'T4') === 'elevated') {
+      recommendations.push('Your T4 level is elevated. Review your thyroid medication dosage with your healthcare provider.');
+    }
+
+    if (t3 !== null && determineStatus(t3, 'T3') === 'low') {
+      recommendations.push('Your T3 level is low. This may affect energy levels. Discuss supplementation options with your doctor.');
+    }
+    if (t3 !== null && determineStatus(t3, 'T3') === 'elevated') {
+      recommendations.push('Your T3 level is elevated. Monitor for symptoms of hyperthyroidism and adjust treatment as needed.');
+    }
+
+    if (recommendations.length === 0) {
+      recommendations.push('Continue with regular thyroid monitoring and maintain your current health routine.');
+      recommendations.push('Schedule follow-up tests as recommended by your healthcare provider.');
+    }
+
+    return recommendations;
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'normal': return 'text-green-400';
@@ -98,16 +167,28 @@ const LabReportAnalysis = () => {
 
       setProgress(100);
 
+      // Extract thyroid values from the API response
+      const tshLevel = data.thyroid_values?.TSH ?? null;
+      const t3Level = data.thyroid_values?.T3 ?? null;
+      const t4Level = data.thyroid_values?.T4 ?? null;
+
+      // Generate status, summary, and recommendations
+      const tshStatus = tshLevel !== null ? determineStatus(tshLevel, 'TSH') : 'unknown';
+      const t3Status = t3Level !== null ? determineStatus(t3Level, 'T3') : 'unknown';
+      const t4Status = t4Level !== null ? determineStatus(t4Level, 'T4') : 'unknown';
+      const summary = generateSummary(tshLevel, t3Level, t4Level);
+      const recommendations = generateRecommendations(tshLevel, t3Level, t4Level);
+
       // Map the API response to our AnalysisResult interface
       setAnalysisResult({
-        tsh_level: data.tsh_level ?? null,
-        t3_level: data.t3_level ?? null,
-        t4_level: data.t4_level ?? null,
-        tsh_status: data.tsh_status ?? 'unknown',
-        t3_status: data.t3_status ?? 'unknown',
-        t4_status: data.t4_status ?? 'unknown',
-        summary: data.summary ?? data.message ?? 'Analysis complete',
-        recommendations: data.recommendations ?? [],
+        tsh_level: tshLevel,
+        t3_level: t3Level,
+        t4_level: t4Level,
+        tsh_status: tshStatus,
+        t3_status: t3Status,
+        t4_status: t4Status,
+        summary: summary,
+        recommendations: recommendations,
         synced: data.synced ?? false,
       });
 

@@ -82,7 +82,8 @@ const LabReportAnalysis = () => {
 
       setProgress(60);
 
-      const response = await fetch('https://strategic-privileges-lecture-role.trycloudflare.com/upload_file', {
+
+      const response = await fetch('https://tia-api.ig4429.me/upload/', {
         method: 'POST',
         body: formData,
       });

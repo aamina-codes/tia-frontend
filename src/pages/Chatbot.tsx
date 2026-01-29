@@ -18,7 +18,7 @@ const Chatbot = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "🦋 Hi! I'm TIA, your Thyroid Intelligent Assistant. How can I help you today?" }
+    { role: "assistant", content: "Hi! I'm TIA, your Thyroid Intelligent Assistant. How can I help you today?" }
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -103,12 +103,10 @@ const Chatbot = () => {
       <section className="relative z-10 px-6 pb-8">
         <div className="max-w-4xl mx-auto text-center">
           <div className="flex items-center justify-center gap-4 mb-4">
-            <div className="p-4 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 animate-pulse">
-              <img src={tiaLogo} alt="TIA" className="w-16 h-16" />
-            </div>
+            <img src={tiaLogo} alt="TIA" className="w-16 h-16 animate-pulse" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-300 via-purple-300 to-pink-400 bg-clip-text text-transparent">
-            🦋 Chat with TIA
+            Chat with TIA
           </h1>
           <p className="text-xl text-white/90 max-w-2xl mx-auto">
             Your empathetic AI companion for thyroid health questions and support.

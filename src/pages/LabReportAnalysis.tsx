@@ -152,7 +152,7 @@ const LabReportAnalysis = () => {
       setProgress(60);
 
 
-      const response = await fetch('https://tia-api.ig4429.me/upload/', {
+      const response = await fetch('https://court-reduced-satisfaction-psychology.trycloudflare.com/upload/', {
         method: 'POST',
         body: formData,
       });

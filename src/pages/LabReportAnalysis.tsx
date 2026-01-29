@@ -152,7 +152,7 @@ const LabReportAnalysis = () => {
       setProgress(60);
 
 
-      const response = await fetch('https://court-reduced-satisfaction-psychology.trycloudflare.com/upload/', {
+      const response = await fetch('https://court-reduced-satisfaction-psychology.trycloudflare.com/upload_file', {
         method: 'POST',
         body: formData,
       });

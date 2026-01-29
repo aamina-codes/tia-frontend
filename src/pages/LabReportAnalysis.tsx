@@ -193,13 +193,13 @@ const LabReportAnalysis = () => {
       });
 
       toast({
-        title: "✨ Report uploaded successfully!",
+        title: "Report uploaded successfully!",
         description: "TIA has analyzed your thyroid health.",
       });
 
       setTimeout(() => {
         toast({
-          title: "🦋 Analysis Complete!",
+          title: "Analysis Complete!",
           description: "Your report has been analyzed successfully",
         });
       }, 1500);
@@ -259,7 +259,7 @@ const LabReportAnalysis = () => {
             Upload your thyroid test reports (TSH, T3, T4) and let TIA analyze them with AI-powered insights.
           </p>
           <p className="text-sm text-pink-300/70 italic">
-            ✨ Your reports are securely stored and automatically synced across your health dashboard
+            Your reports are securely stored and automatically synced across your health dashboard
           </p>
         </div>
       </section>
@@ -281,7 +281,7 @@ const LabReportAnalysis = () => {
                 </div>
                 
                 <h3 className="text-3xl font-bold text-white drop-shadow-[0_0_20px_rgba(236,72,153,0.5)]">
-                  {isUploading ? "🦋 Analyzing Your Report..." : selectedFile ? "✨ File Selected!" : "🦋 Upload Your Thyroid Report"}
+                  {isUploading ? "Analyzing Your Report..." : selectedFile ? "File Selected!" : "Upload Your Thyroid Report"}
                 </h3>
                 
                 {selectedFile && !isUploading && (
@@ -303,7 +303,7 @@ const LabReportAnalysis = () => {
                   <div className="w-full max-w-md space-y-3 animate-fade-in">
                     <Progress value={progress} className="h-3 shadow-[0_0_20px_rgba(236,72,153,0.4)]" />
                     <p className="text-pink-300 text-sm text-center font-medium drop-shadow-[0_0_8px_rgba(236,72,153,0.6)]">
-                      {isAnalyzing ? "✨ Running AI analysis..." : `📤 Uploading... ${progress}%`}
+                      {isAnalyzing ? "Running AI analysis..." : `Uploading... ${progress}%`}
                     </p>
                   </div>
                 )}
@@ -457,7 +457,7 @@ const LabReportAnalysis = () => {
                     <div className="flex items-center justify-center space-x-3">
                       <CheckCircle className="w-6 h-6 text-green-400 animate-pulse" />
                       <p className="text-white font-medium">
-                        ✨ Data synced with Tracker, Dashboard, and Reminders!
+                        Data synced with Tracker, Dashboard, and Reminders!
                       </p>
                     </div>
                   </CardContent>

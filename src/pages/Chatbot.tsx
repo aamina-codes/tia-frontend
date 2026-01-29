@@ -103,7 +103,9 @@ const Chatbot = () => {
       <section className="relative z-10 px-6 pb-8">
         <div className="max-w-4xl mx-auto text-center">
           <div className="flex items-center justify-center gap-4 mb-4">
-            <img src={tiaLogo} alt="TIA" className="w-16 h-16 animate-pulse" />
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-pink-500/30 to-purple-500/30 flex items-center justify-center animate-pulse">
+              <img src={tiaLogo} alt="TIA" className="w-14 h-14 object-contain" />
+            </div>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-300 via-purple-300 to-pink-400 bg-clip-text text-transparent">
             Chat with TIA

@@ -103,9 +103,7 @@ const Chatbot = () => {
       <section className="relative z-10 px-6 pb-8">
         <div className="max-w-4xl mx-auto text-center">
           <div className="flex items-center justify-center gap-4 mb-4">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-pink-500/30 to-purple-500/30 flex items-center justify-center animate-pulse">
-              <img src={tiaLogo} alt="TIA" className="w-14 h-14 object-contain" />
-            </div>
+            <img src={tiaLogo} alt="TIA" className="w-16 h-16 animate-pulse" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-300 via-purple-300 to-pink-400 bg-clip-text text-transparent">
             Chat with TIA
@@ -130,7 +128,7 @@ const Chatbot = () => {
                   >
                     {message.role === "assistant" && (
                       <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 border border-pink-400/30 flex items-center justify-center">
-                        <img src={tiaLogo} alt="TIA" className="w-6 h-6" />
+                        <img src={tiaLogo} alt="TIA" className="w-6 h-6 object-contain" />
                       </div>
                     )}
                     
@@ -157,7 +155,7 @@ const Chatbot = () => {
                 {isLoading && (
                   <div className="flex justify-start items-start gap-3">
                     <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 border border-pink-400/30 flex items-center justify-center">
-                      <img src={tiaLogo} alt="TIA" className="w-6 h-6" />
+                      <img src={tiaLogo} alt="TIA" className="w-6 h-6 object-contain" />
                     </div>
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center space-x-2">
                       <Loader2 className="w-5 h-5 text-pink-300 animate-spin" />

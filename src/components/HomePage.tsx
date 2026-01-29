@@ -56,41 +56,37 @@ const HomePage = () => {
         {/* About TIA Section */}
         <section className="py-12 px-6">
           <div className="max-w-3xl mx-auto">
-            {/* Pink Fill with White Border */}
-            <div className="p-[2px] rounded-3xl bg-pink-400 border-2 border-white transition-all duration-300 hover:shadow-[0_0_50px_hsl(280,80%,50%,0.6)]">
-              {/* Glassmorphic Card */}
-              <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-8 md:p-12">
-                {/* Heading */}
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 text-center relative inline-block w-full">
-                  About TIA
-                  <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-pink-400 rounded-full"></span>
-                </h2>
-                
-                {/* Description with Keywords */}
-                <p className="text-white text-lg leading-relaxed text-center mt-8">
-                  TIA (Thyroid Intelligent Assistant) is designed to bridge the gap between patients and healthcare providers in thyroid care. Our{' '}
-                  <span className="font-semibold text-purple-900">
-                    AI-powered platform
-                  </span>{' '}
-                  helps you understand your{' '}
-                  <span className="font-semibold text-purple-900">
-                    thyroid health
-                  </span>
-                  , track{' '}
-                  <span className="font-semibold text-purple-900">
-                    progress
-                  </span>
-                  , and make informed decisions with personalized{' '}
-                  <span className="font-semibold text-purple-900">
-                    insights
-                  </span>{' '}
-                  and{' '}
-                  <span className="font-semibold text-purple-900">
-                    support
-                  </span>
-                  .
-                </p>
-              </div>
+            {/* Rounded Square Box - Same style as Get Started button */}
+            <div className="bg-gradient-to-r from-pink-400 to-pink-300 rounded-2xl p-8 md:p-12 shadow-glow-button transition-all duration-300 hover:shadow-glow-button-hover hover:scale-[1.02]">
+              {/* Heading */}
+              <h2 className="text-3xl md:text-4xl font-bold text-purple-900 mb-6 text-center">
+                About TIA
+              </h2>
+              
+              {/* Description */}
+              <p className="text-purple-900 text-lg leading-relaxed text-center">
+                TIA (Thyroid Intelligent Assistant) is designed to bridge the gap between patients and healthcare providers in thyroid care. Our{' '}
+                <span className="font-bold">
+                  AI-powered platform
+                </span>{' '}
+                helps you understand your{' '}
+                <span className="font-bold">
+                  thyroid health
+                </span>
+                , track{' '}
+                <span className="font-bold">
+                  progress
+                </span>
+                , and make informed decisions with personalized{' '}
+                <span className="font-bold">
+                  insights
+                </span>{' '}
+                and{' '}
+                <span className="font-bold">
+                  support
+                </span>
+                .
+              </p>
             </div>
           </div>
         </section>

@@ -145,7 +145,7 @@ const LabReportAnalysis = () => {
       setProgress(40);
       setIsAnalyzing(true);
 
-      // Create FormData and send to FastAPI backend
+      // Create FormData and send to FastAPI backend (Render)
       const formData = new FormData();
       formData.append('file', selectedFile);
 

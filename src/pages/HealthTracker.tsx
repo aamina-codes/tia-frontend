@@ -1,11 +1,87 @@
+import { useState } from "react";
 import { ArrowLeft, TrendingUp, Plus, Heart, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 
 const HealthTracker = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    date: new Date().toISOString().split('T')[0],
+    tsh_level: "",
+    t3_level: "",
+    t4_level: "",
+    mood: "",
+    energy_level: "",
+    notes: ""
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Please sign in",
+          description: "You need to be signed in to add health entries.",
+          variant: "destructive"
+        });
+        navigate('/auth');
+        return;
+      }
+
+      const { error } = await supabase.from('health_tracker').insert({
+        user_id: user.id,
+        date: formData.date,
+        tsh_level: formData.tsh_level ? parseFloat(formData.tsh_level) : null,
+        t3_level: formData.t3_level ? parseFloat(formData.t3_level) : null,
+        t4_level: formData.t4_level ? parseFloat(formData.t4_level) : null,
+        mood: formData.mood || null,
+        energy_level: formData.energy_level ? parseInt(formData.energy_level) : null,
+        notes: formData.notes || null
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Entry added!",
+        description: "Your health data has been saved successfully."
+      });
+
+      setFormData({
+        date: new Date().toISOString().split('T')[0],
+        tsh_level: "",
+        t3_level: "",
+        t4_level: "",
+        mood: "",
+        energy_level: "",
+        notes: ""
+      });
+      setIsOpen(false);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save entry.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-deep-dark-purple relative overflow-hidden">
@@ -46,12 +122,121 @@ const HealthTracker = () => {
             <CardContent className="p-8">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-white">Health Trends</h3>
-                <Button 
-                  className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-full shadow-[0_0_20px_hsl(330,80%,50%,0.4)] hover:shadow-[0_0_30px_hsl(330,80%,50%,0.6)] transition-all duration-300"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Entry
-                </Button>
+                
+                <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-full shadow-[0_0_20px_hsl(330,80%,50%,0.4)] hover:shadow-[0_0_30px_hsl(330,80%,50%,0.6)] transition-all duration-300"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Entry
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-deep-dark-purple border-pink-400/50 text-white max-w-md">
+                    <DialogHeader>
+                      <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-pink-300 to-purple-300 bg-clip-text text-transparent">
+                        Add Health Entry
+                      </DialogTitle>
+                    </DialogHeader>
+                    
+                    <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                      <div>
+                        <Label className="text-white/80">Date</Label>
+                        <Input
+                          type="date"
+                          value={formData.date}
+                          onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                          className="bg-white/10 border-pink-400/30 text-white focus:border-pink-400"
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <Label className="text-white/80">TSH (mIU/L)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="e.g., 2.5"
+                            value={formData.tsh_level}
+                            onChange={(e) => setFormData({ ...formData, tsh_level: e.target.value })}
+                            className="bg-white/10 border-pink-400/30 text-white placeholder:text-white/40 focus:border-pink-400"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-white/80">T3 (ng/dL)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="e.g., 120"
+                            value={formData.t3_level}
+                            onChange={(e) => setFormData({ ...formData, t3_level: e.target.value })}
+                            className="bg-white/10 border-purple-400/30 text-white placeholder:text-white/40 focus:border-purple-400"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-white/80">T4 (μg/dL)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="e.g., 8.0"
+                            value={formData.t4_level}
+                            onChange={(e) => setFormData({ ...formData, t4_level: e.target.value })}
+                            className="bg-white/10 border-blue-400/30 text-white placeholder:text-white/40 focus:border-blue-400"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-white/80">Mood</Label>
+                          <Select value={formData.mood} onValueChange={(value) => setFormData({ ...formData, mood: value })}>
+                            <SelectTrigger className="bg-white/10 border-pink-400/30 text-white focus:border-pink-400">
+                              <SelectValue placeholder="Select mood" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-deep-dark-purple border-pink-400/30">
+                              <SelectItem value="great">😊 Great</SelectItem>
+                              <SelectItem value="good">🙂 Good</SelectItem>
+                              <SelectItem value="okay">😐 Okay</SelectItem>
+                              <SelectItem value="low">😔 Low</SelectItem>
+                              <SelectItem value="bad">😢 Bad</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-white/80">Energy (1-10)</Label>
+                          <Select value={formData.energy_level} onValueChange={(value) => setFormData({ ...formData, energy_level: value })}>
+                            <SelectTrigger className="bg-white/10 border-purple-400/30 text-white focus:border-purple-400">
+                              <SelectValue placeholder="Select level" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-deep-dark-purple border-purple-400/30">
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                                <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-white/80">Notes</Label>
+                        <Textarea
+                          placeholder="Any symptoms or observations..."
+                          value={formData.notes}
+                          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                          className="bg-white/10 border-pink-400/30 text-white placeholder:text-white/40 focus:border-pink-400 min-h-[80px]"
+                        />
+                      </div>
+                      
+                      <Button
+                        type="submit"
+                        disabled={isLoading}
+                        className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-full shadow-[0_0_20px_hsl(330,80%,50%,0.4)] hover:shadow-[0_0_30px_hsl(330,80%,50%,0.6)] transition-all duration-300"
+                      >
+                        {isLoading ? "Saving..." : "Save Entry"}
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               </div>
               
               {/* Placeholder Graph */}

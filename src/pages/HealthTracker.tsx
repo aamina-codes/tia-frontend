@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, TrendingUp, Plus, Heart, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,13 +10,36 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { format } from "date-fns";
 import Navigation from "@/components/Navigation";
+
+interface HealthEntry {
+  id: string;
+  date: string;
+  tsh_level: number | null;
+  t3_level: number | null;
+  t4_level: number | null;
+  mood: string | null;
+  energy_level: number | null;
+  notes: string | null;
+  created_at: string;
+}
+
+const moodEmojis: Record<string, string> = {
+  great: "😊",
+  good: "🙂",
+  okay: "😐",
+  low: "😔",
+  bad: "😢"
+};
 
 const HealthTracker = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [entries, setEntries] = useState<HealthEntry[]>([]);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     tsh_level: "",
@@ -26,6 +49,25 @@ const HealthTracker = () => {
     energy_level: "",
     notes: ""
   });
+
+  const fetchEntries = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('health_tracker')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('date', { ascending: true });
+
+    if (!error && data) {
+      setEntries(data);
+    }
+  };
+
+  useEffect(() => {
+    fetchEntries();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +114,7 @@ const HealthTracker = () => {
         notes: ""
       });
       setIsOpen(false);
+      fetchEntries();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -82,6 +125,16 @@ const HealthTracker = () => {
       setIsLoading(false);
     }
   };
+
+  const chartData = entries.map(entry => ({
+    date: format(new Date(entry.date), 'MMM dd'),
+    TSH: entry.tsh_level,
+    T3: entry.t3_level,
+    T4: entry.t4_level
+  }));
+
+  const moodEntries = entries.filter(e => e.mood).slice(-5).reverse();
+  const noteEntries = entries.filter(e => e.notes).slice(-5).reverse();
 
   return (
     <div className="min-h-screen bg-deep-dark-purple relative overflow-hidden">
@@ -239,13 +292,37 @@ const HealthTracker = () => {
                 </Dialog>
               </div>
               
-              {/* Placeholder Graph */}
-              <div className="bg-white/5 rounded-xl border border-purple-400/30 p-8 h-80 flex items-center justify-center">
-                <div className="text-center">
-                  <TrendingUp className="w-16 h-16 text-pink-300 mx-auto mb-4" />
-                  <p className="text-white/70 text-lg">Your health trends will appear here</p>
-                  <p className="text-white/50 text-sm mt-2">Start by adding your first entry</p>
-                </div>
+              {/* Chart or Placeholder */}
+              <div className="bg-white/5 rounded-xl border border-purple-400/30 p-4 h-80">
+                {chartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                      <XAxis dataKey="date" stroke="rgba(255,255,255,0.7)" fontSize={12} />
+                      <YAxis stroke="rgba(255,255,255,0.7)" fontSize={12} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'rgba(30, 20, 50, 0.95)', 
+                          border: '1px solid rgba(236, 72, 153, 0.5)',
+                          borderRadius: '8px',
+                          color: 'white'
+                        }} 
+                      />
+                      <Legend />
+                      <Line type="monotone" dataKey="TSH" stroke="#f472b6" strokeWidth={2} dot={{ fill: '#f472b6' }} />
+                      <Line type="monotone" dataKey="T3" stroke="#c084fc" strokeWidth={2} dot={{ fill: '#c084fc' }} />
+                      <Line type="monotone" dataKey="T4" stroke="#60a5fa" strokeWidth={2} dot={{ fill: '#60a5fa' }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="text-center">
+                      <TrendingUp className="w-16 h-16 text-pink-300 mx-auto mb-4" />
+                      <p className="text-white/70 text-lg">Your health trends will appear here</p>
+                      <p className="text-white/50 text-sm mt-2">Start by adding your first entry</p>
+                    </div>
+                  </div>
+                )}
               </div>
               
               {/* Legend */}
@@ -284,12 +361,24 @@ const HealthTracker = () => {
               <p className="text-white/70 mb-4">Track how you're feeling each day</p>
               
               <div className="space-y-2">
-                <div className="p-3 bg-white/5 rounded-lg border border-pink-400/20 hover:border-pink-400/50 transition-all cursor-pointer">
-                  <p className="text-white/80 text-sm">😊 Feeling great today</p>
-                </div>
-                <div className="p-3 bg-white/5 rounded-lg border border-pink-400/20 hover:border-pink-400/50 transition-all cursor-pointer">
-                  <p className="text-white/80 text-sm">😐 Normal energy levels</p>
-                </div>
+                {moodEntries.length > 0 ? (
+                  moodEntries.map((entry) => (
+                    <div key={entry.id} className="p-3 bg-white/5 rounded-lg border border-pink-400/20 hover:border-pink-400/50 transition-all">
+                      <div className="flex justify-between items-center">
+                        <p className="text-white/80 text-sm">
+                          {moodEmojis[entry.mood!] || "😊"} {entry.mood?.charAt(0).toUpperCase()}{entry.mood?.slice(1)}
+                        </p>
+                        <span className="text-white/50 text-xs">{format(new Date(entry.date), 'MMM dd')}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <div className="p-3 bg-white/5 rounded-lg border border-pink-400/20 text-white/50 text-sm">
+                      No mood entries yet
+                    </div>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -307,12 +396,22 @@ const HealthTracker = () => {
               <p className="text-white/70 mb-4">Record symptoms and observations</p>
               
               <div className="space-y-2">
-                <div className="p-3 bg-white/5 rounded-lg border border-purple-400/20 hover:border-purple-400/50 transition-all cursor-pointer">
-                  <p className="text-white/80 text-sm">📝 Slight fatigue in morning</p>
-                </div>
-                <div className="p-3 bg-white/5 rounded-lg border border-purple-400/20 hover:border-purple-400/50 transition-all cursor-pointer">
-                  <p className="text-white/80 text-sm">💊 Started new medication</p>
-                </div>
+                {noteEntries.length > 0 ? (
+                  noteEntries.map((entry) => (
+                    <div key={entry.id} className="p-3 bg-white/5 rounded-lg border border-purple-400/20 hover:border-purple-400/50 transition-all">
+                      <div className="flex justify-between items-start">
+                        <p className="text-white/80 text-sm line-clamp-2">📝 {entry.notes}</p>
+                        <span className="text-white/50 text-xs ml-2 whitespace-nowrap">{format(new Date(entry.date), 'MMM dd')}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <div className="p-3 bg-white/5 rounded-lg border border-purple-400/20 text-white/50 text-sm">
+                      No health notes yet
+                    </div>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>

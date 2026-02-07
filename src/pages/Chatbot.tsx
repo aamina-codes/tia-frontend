@@ -1,27 +1,60 @@
 import { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Send, Loader2 } from "lucide-react";
+import { ArrowLeft, Send, Loader2, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import Navigation from "@/components/Navigation";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import tiaLogo from "@/assets/tia-butterfly-logo.png";
+import {
+  QuickReply,
+  SymptomCheckbox,
+  detectTrigger,
+  getInitialResponse,
+  getConditionResponse,
+  getSymptomResponse,
+  getTestExplanation,
+  EDUCATIONAL_DISCLAIMER
+} from "@/lib/thyroidDecisionTree";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  quickReplies?: QuickReply[];
+  symptomChecklist?: SymptomCheckbox[];
+  condition?: string;
+}
+
+interface DecisionState {
+  active: boolean;
+  trigger: "low_tsh" | "high_tsh" | null;
+  awaitingT4Response: boolean;
+  awaitingSymptomResponse: boolean;
+  currentCondition: string | null;
 }
 
 const Chatbot = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Hi! I'm TIA, your Thyroid Intelligent Assistant. How can I help you today?" }
+    { 
+      role: "assistant", 
+      content: "Hi! I'm TIA, your Thyroid Intelligent Assistant. I'm here to help you understand thyroid reports, symptoms, and conditions.\n\nI can help you interpret your TSH, T4, and T3 levels by asking smart follow-up questions. Just tell me about your thyroid levels or ask any thyroid-related question!" 
+    }
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
+  const [decisionState, setDecisionState] = useState<DecisionState>({
+    active: false,
+    trigger: null,
+    awaitingT4Response: false,
+    awaitingSymptomResponse: false,
+    currentCondition: null
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -32,11 +65,134 @@ const Chatbot = () => {
     scrollToBottom();
   }, [messages]);
 
+  const handleQuickReply = (reply: QuickReply) => {
+    // Add user message
+    setMessages(prev => [...prev, { role: "user", content: reply.label }]);
+
+    if (decisionState.awaitingT4Response && decisionState.trigger) {
+      // Process T4 response
+      const response = getConditionResponse(decisionState.trigger, reply.value);
+      
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: response.message,
+        quickReplies: response.quickReplies,
+        symptomChecklist: response.symptomChecklist,
+        condition: response.condition
+      }]);
+
+      setDecisionState(prev => ({
+        ...prev,
+        awaitingT4Response: false,
+        awaitingSymptomResponse: !!response.symptomChecklist,
+        currentCondition: response.condition || null
+      }));
+
+      if (!response.symptomChecklist && !response.quickReplies) {
+        // End decision tree
+        setDecisionState({
+          active: false,
+          trigger: null,
+          awaitingT4Response: false,
+          awaitingSymptomResponse: false,
+          currentCondition: null
+        });
+      }
+    } else if (reply.value === "explain") {
+      // User wants test explanation
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: getTestExplanation()
+      }]);
+      setDecisionState({
+        active: false,
+        trigger: null,
+        awaitingT4Response: false,
+        awaitingSymptomResponse: false,
+        currentCondition: null
+      });
+    } else if (reply.value === "other") {
+      // User has another question
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: "Of course! Feel free to ask me any other thyroid-related questions. What would you like to know?"
+      }]);
+      setDecisionState({
+        active: false,
+        trigger: null,
+        awaitingT4Response: false,
+        awaitingSymptomResponse: false,
+        currentCondition: null
+      });
+    }
+  };
+
+  const handleSymptomToggle = (symptomId: string) => {
+    setSelectedSymptoms(prev => 
+      prev.includes(symptomId) 
+        ? prev.filter(s => s !== symptomId)
+        : [...prev, symptomId]
+    );
+  };
+
+  const handleSymptomSubmit = () => {
+    const symptomLabels = selectedSymptoms.length > 0 
+      ? `Selected symptoms: ${selectedSymptoms.join(", ")}`
+      : "No symptoms selected";
+    
+    setMessages(prev => [...prev, { role: "user", content: symptomLabels }]);
+
+    const response = getSymptomResponse(
+      decisionState.currentCondition || "your condition",
+      selectedSymptoms
+    );
+
+    setMessages(prev => [...prev, {
+      role: "assistant",
+      content: response
+    }]);
+
+    // Reset state
+    setSelectedSymptoms([]);
+    setDecisionState({
+      active: false,
+      trigger: null,
+      awaitingT4Response: false,
+      awaitingSymptomResponse: false,
+      currentCondition: null
+    });
+  };
+
   const handleSendMessage = async () => {
     if (inputMessage.trim() && !isLoading) {
       const userMessage = inputMessage;
       setMessages(prev => [...prev, { role: "user", content: userMessage }]);
       setInputMessage("");
+
+      // Check for decision tree triggers
+      const trigger = detectTrigger(userMessage);
+      
+      if (trigger) {
+        // Start decision tree flow
+        const initialResponse = getInitialResponse(trigger);
+        
+        setMessages(prev => [...prev, {
+          role: "assistant",
+          content: initialResponse.message,
+          quickReplies: initialResponse.quickReplies
+        }]);
+
+        setDecisionState({
+          active: true,
+          trigger,
+          awaitingT4Response: true,
+          awaitingSymptomResponse: false,
+          currentCondition: null
+        });
+        return;
+      }
+
+      // Regular AI flow
       setIsLoading(true);
       
       try {
@@ -77,6 +233,102 @@ const Chatbot = () => {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const renderMessage = (message: Message, index: number) => {
+    const isLastMessage = index === messages.length - 1;
+    
+    return (
+      <div key={index}>
+        <div
+          className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} items-start gap-3`}
+        >
+          {message.role === "assistant" && (
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 border border-pink-400/30 flex items-center justify-center">
+              <img src={tiaLogo} alt="TIA" className="w-6 h-6 object-contain" />
+            </div>
+          )}
+          
+          <div 
+            className={`max-w-[70%] rounded-2xl p-4 ${
+              message.role === "user" 
+                ? "bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-400/30" 
+                : "bg-white/5 border border-white/10"
+            }`}
+          >
+            <div className="text-white/90 leading-relaxed whitespace-pre-wrap prose prose-invert prose-sm max-w-none">
+              {message.content.split('\n').map((line, i) => {
+                // Handle bold text
+                const formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                return (
+                  <p 
+                    key={i} 
+                    className="mb-1 last:mb-0"
+                    dangerouslySetInnerHTML={{ __html: formattedLine }}
+                  />
+                );
+              })}
+            </div>
+          </div>
+
+          {message.role === "user" && (
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-400/30 flex items-center justify-center">
+              <svg className="w-5 h-5 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+          )}
+        </div>
+
+        {/* Quick Replies */}
+        {message.role === "assistant" && message.quickReplies && isLastMessage && (
+          <div className="ml-13 mt-3 flex flex-wrap gap-2 pl-13">
+            {message.quickReplies.map((reply) => (
+              <Button
+                key={reply.id}
+                variant="outline"
+                size="sm"
+                onClick={() => handleQuickReply(reply)}
+                className="bg-gradient-to-r from-pink-500/10 to-purple-500/10 border-pink-400/40 text-white hover:bg-pink-500/20 hover:border-pink-400 transition-all"
+              >
+                {reply.label}
+              </Button>
+            ))}
+          </div>
+        )}
+
+        {/* Symptom Checklist */}
+        {message.role === "assistant" && message.symptomChecklist && isLastMessage && decisionState.awaitingSymptomResponse && (
+          <div className="ml-13 mt-4 pl-13">
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+              {message.symptomChecklist.map((symptom) => (
+                <div key={symptom.id} className="flex items-center space-x-3">
+                  <Checkbox
+                    id={symptom.id}
+                    checked={selectedSymptoms.includes(symptom.id)}
+                    onCheckedChange={() => handleSymptomToggle(symptom.id)}
+                    className="border-pink-400/50 data-[state=checked]:bg-pink-500 data-[state=checked]:border-pink-500"
+                  />
+                  <label 
+                    htmlFor={symptom.id}
+                    className="text-white/80 text-sm cursor-pointer hover:text-white transition-colors"
+                  >
+                    {symptom.label}
+                  </label>
+                </div>
+              ))}
+              <Button
+                onClick={handleSymptomSubmit}
+                className="mt-4 w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white"
+              >
+                <Check className="w-4 h-4 mr-2" />
+                Submit Symptoms
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -121,36 +373,7 @@ const Chatbot = () => {
             <CardContent className="p-6">
               {/* Messages Area */}
               <div className="h-[500px] overflow-y-auto mb-4 space-y-4 pr-2">
-                {messages.map((message, index) => (
-                  <div
-                    key={index}
-                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} items-start gap-3`}
-                  >
-                    {message.role === "assistant" && (
-                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 border border-pink-400/30 flex items-center justify-center">
-                        <img src={tiaLogo} alt="TIA" className="w-6 h-6 object-contain" />
-                      </div>
-                    )}
-                    
-                    <div 
-                      className={`max-w-[70%] rounded-2xl p-4 ${
-                        message.role === "user" 
-                          ? "bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-400/30" 
-                          : "bg-white/5 border border-white/10"
-                      }`}
-                    >
-                      <p className="text-white/90 leading-relaxed whitespace-pre-wrap">{message.content}</p>
-                    </div>
-
-                    {message.role === "user" && (
-                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-400/30 flex items-center justify-center">
-                        <svg className="w-5 h-5 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                {messages.map((message, index) => renderMessage(message, index))}
                 
                 {isLoading && (
                   <div className="flex justify-start items-start gap-3">
@@ -170,16 +393,16 @@ const Chatbot = () => {
               <div className="flex items-center gap-3">
                 <Input
                   type="text"
-                  placeholder="Ask me anything about thyroid health..."
+                  placeholder="Try: 'My TSH is low' or 'My TSH is high'..."
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  disabled={isLoading}
+                  disabled={isLoading || decisionState.awaitingSymptomResponse}
                   className="flex-1 bg-white/10 border-pink-400/30 text-white placeholder:text-white/50 rounded-full px-6 py-6 focus:ring-2 focus:ring-pink-400"
                 />
                 <Button 
                   onClick={handleSendMessage}
-                  disabled={isLoading || !inputMessage.trim()}
+                  disabled={isLoading || !inputMessage.trim() || decisionState.awaitingSymptomResponse}
                   className="rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white p-6 shadow-[0_0_20px_rgba(236,72,153,0.4)] hover:shadow-[0_0_30px_rgba(236,72,153,0.6)] transition-all duration-300 disabled:opacity-50"
                 >
                   <Send className="w-5 h-5" />

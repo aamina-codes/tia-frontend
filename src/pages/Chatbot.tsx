@@ -42,7 +42,7 @@ const Chatbot = () => {
   const [messages, setMessages] = useState<Message[]>([
     { 
       role: "assistant", 
-      content: "Hi! I'm TIA, your Thyroid Intelligent Assistant. I'm here to help you understand thyroid reports, symptoms, and conditions.\n\nI can help you interpret your TSH, T4, and T3 levels by asking smart follow-up questions. Just tell me about your thyroid levels or ask any thyroid-related question!" 
+      content: "Hi! I'm TIA, your Thyroid Intelligent Assistant. How can I help you today?" 
     }
   ]);
   const [inputMessage, setInputMessage] = useState("");

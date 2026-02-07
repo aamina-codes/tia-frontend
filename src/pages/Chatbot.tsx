@@ -289,7 +289,7 @@ const Chatbot = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => handleQuickReply(reply)}
-                className="bg-gradient-to-r from-pink-500/10 to-purple-500/10 border-pink-400/40 text-white hover:bg-pink-500/20 hover:border-pink-400 transition-all"
+                className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 border-none text-white shadow-[0_0_15px_rgba(236,72,153,0.3)] hover:shadow-[0_0_20px_rgba(236,72,153,0.5)] transition-all"
               >
                 {reply.label}
               </Button>

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Send, Loader2, Check } from "lucide-react";
+import { ArrowLeft, Send, Loader2, Check, Paperclip } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,6 +48,7 @@ const Chatbot = () => {
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const [decisionState, setDecisionState] = useState<DecisionState>({
     active: false,
     trigger: null,
@@ -56,6 +57,7 @@ const Chatbot = () => {
     currentCondition: null
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -235,6 +237,111 @@ const Chatbot = () => {
     }
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload a PDF, JPG, or PNG file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please upload a file smaller than 10MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    // Add user message showing file upload
+    setMessages(prev => [...prev, { 
+      role: "user", 
+      content: `📎 Uploaded: ${file.name}` 
+    }]);
+
+    // Add confirmation message
+    setMessages(prev => [...prev, { 
+      role: "assistant", 
+      content: "Report uploaded successfully. Analyzing your results…" 
+    }]);
+
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Call the analyze-lab-report edge function
+      const { data, error } = await supabase.functions.invoke('analyze-lab-report', {
+        body: formData,
+      });
+
+      if (error) {
+        console.error('Lab report analysis error:', error);
+        setMessages(prev => [...prev, { 
+          role: "assistant", 
+          content: "I had trouble analyzing your report. Please try again or type your lab values manually (e.g., 'My TSH is 0.3')." 
+        }]);
+      } else if (data?.analysis) {
+        // Add the analysis response
+        setMessages(prev => [...prev, { 
+          role: "assistant", 
+          content: data.analysis 
+        }]);
+      } else if (data?.values) {
+        // If we got extracted values, format a response
+        const values = data.values;
+        let response = "I've analyzed your lab report. Here's what I found:\n\n";
+        
+        if (values.tsh) response += `**TSH:** ${values.tsh} ${values.tsh_unit || 'mIU/L'}\n`;
+        if (values.t4) response += `**Free T4:** ${values.t4} ${values.t4_unit || 'ng/dL'}\n`;
+        if (values.t3) response += `**T3:** ${values.t3} ${values.t3_unit || 'pg/mL'}\n`;
+        
+        response += "\nWould you like me to explain what these values mean?";
+        
+        setMessages(prev => [...prev, { 
+          role: "assistant", 
+          content: response,
+          quickReplies: [
+            { id: "explain", label: "Yes, explain my results", value: "explain" },
+            { id: "other", label: "I have another question", value: "other" }
+          ]
+        }]);
+      } else {
+        setMessages(prev => [...prev, { 
+          role: "assistant", 
+          content: "I've received your report but couldn't extract specific values. Could you tell me your TSH, T4, or T3 levels?" 
+        }]);
+      }
+    } catch (error) {
+      console.error('File upload error:', error);
+      setMessages(prev => [...prev, { 
+        role: "assistant", 
+        content: "Something went wrong while analyzing your report. Please try again or share your lab values manually." 
+      }]);
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handlePaperclipClick = () => {
+    fileInputRef.current?.click();
+  };
+
   const renderMessage = (message: Message, index: number) => {
     const isLastMessage = index === messages.length - 1;
     
@@ -391,18 +498,40 @@ const Chatbot = () => {
 
               {/* Input Area */}
               <div className="flex items-center gap-3">
+                {/* Hidden file input */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  className="hidden"
+                />
+                
+                {/* Paperclip upload button */}
+                <Button
+                  onClick={handlePaperclipClick}
+                  disabled={isLoading || isUploading || decisionState.awaitingSymptomResponse}
+                  className="rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white p-6 shadow-[0_0_20px_rgba(236,72,153,0.4)] hover:shadow-[0_0_30px_rgba(236,72,153,0.6)] transition-all duration-300 disabled:opacity-50"
+                >
+                  {isUploading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Paperclip className="w-5 h-5" />
+                  )}
+                </Button>
+
                 <Input
                   type="text"
-                  placeholder="Try: 'My TSH is low' or 'My TSH is high'..."
+                  placeholder="Type your message..."
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  disabled={isLoading || decisionState.awaitingSymptomResponse}
+                  disabled={isLoading || isUploading || decisionState.awaitingSymptomResponse}
                   className="flex-1 bg-white/10 border-pink-400/30 text-white placeholder:text-white/50 rounded-full px-6 py-6 focus:ring-2 focus:ring-pink-400"
                 />
                 <Button 
                   onClick={handleSendMessage}
-                  disabled={isLoading || !inputMessage.trim() || decisionState.awaitingSymptomResponse}
+                  disabled={isLoading || isUploading || !inputMessage.trim() || decisionState.awaitingSymptomResponse}
                   className="rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white p-6 shadow-[0_0_20px_rgba(236,72,153,0.4)] hover:shadow-[0_0_30px_rgba(236,72,153,0.6)] transition-all duration-300 disabled:opacity-50"
                 >
                   <Send className="w-5 h-5" />

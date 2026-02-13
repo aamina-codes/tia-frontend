@@ -144,11 +144,11 @@ const Navigation = () => {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-white/10" />
                 <DropdownMenuItem 
-                  onClick={() => setIsProfileDialogOpen(true)}
+                  onClick={() => navigate('/profile')}
                   className="text-muted-foreground hover:text-foreground cursor-pointer"
                 >
                   <Edit2 className="w-4 h-4 mr-2" />
-                  Edit Profile
+                  View Profile
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={handleSignOut}

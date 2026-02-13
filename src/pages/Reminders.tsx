@@ -5,12 +5,27 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import Navigation from "@/components/Navigation";
 import { useState } from "react";
+import { format, isSameDay } from "date-fns";
+import ReminderModal, { type Reminder } from "@/components/ReminderModal";
+import ReminderCalendar from "@/components/ReminderCalendar";
 
 const Reminders = () => {
   const navigate = useNavigate();
   const [medicationEnabled, setMedicationEnabled] = useState(true);
   const [labTestsEnabled, setLabTestsEnabled] = useState(false);
   const [doctorVisitsEnabled, setDoctorVisitsEnabled] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const currentMonth = new Date(2026, 1, 1); // February 2026
+
+  const handleSaveReminder = (reminder: Reminder) => {
+    setReminders((prev) => [...prev, reminder]);
+  };
+
+  const selectedReminders = selectedDate
+    ? reminders.filter((r) => isSameDay(r.date, selectedDate))
+    : [];
 
   return (
     <div className="min-h-screen bg-deep-dark-purple relative overflow-hidden">
@@ -58,6 +73,7 @@ const Reminders = () => {
                 </div>
                 
                 <Button 
+                  onClick={() => setModalOpen(true)}
                   className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-full shadow-[0_0_20px_hsl(330,80%,50%,0.4)] hover:shadow-[0_0_30px_hsl(330,80%,50%,0.6)] transition-all duration-300"
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -65,14 +81,39 @@ const Reminders = () => {
                 </Button>
               </div>
               
-              {/* Calendar Placeholder */}
-              <div className="bg-white/5 rounded-xl border border-pink-400/30 p-6 min-h-64">
-                <div className="text-center py-12">
-                  <Calendar className="w-16 h-16 text-pink-300 mx-auto mb-4" />
-                  <p className="text-white/70 text-lg">Your calendar will appear here</p>
-                  <p className="text-white/50 text-sm mt-2">Add your first reminder to get started</p>
+              <ReminderCalendar
+                currentMonth={currentMonth}
+                reminders={reminders}
+                selectedDate={selectedDate}
+                onSelectDate={setSelectedDate}
+              />
+
+              {/* Selected date reminders */}
+              {selectedDate && (
+                <div className="mt-4">
+                  <h4 className="text-white/80 text-sm font-semibold mb-2">
+                    {format(selectedDate, "MMMM d, yyyy")}
+                  </h4>
+                  {selectedReminders.length === 0 ? (
+                    <p className="text-white/50 text-sm">No reminders for this date.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {selectedReminders.map((r) => (
+                        <div
+                          key={r.id}
+                          className="bg-white/5 border border-pink-400/20 rounded-lg p-3 flex justify-between items-start"
+                        >
+                          <div>
+                            <p className="text-white font-medium text-sm">{r.title}</p>
+                            {r.notes && <p className="text-white/50 text-xs mt-1">{r.notes}</p>}
+                          </div>
+                          <span className="text-pink-300 text-xs font-mono">{r.time}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -181,6 +222,7 @@ const Reminders = () => {
           </Card>
         </div>
       </section>
+      <ReminderModal open={modalOpen} onOpenChange={setModalOpen} onSave={handleSaveReminder} />
     </div>
   );
 };

@@ -114,6 +114,7 @@ const Navigation = () => {
         <Button 
           variant="ghost" 
           size="sm"
+          onClick={() => navigate("/about")}
           className="text-muted-foreground hover:text-foreground hover:bg-card/80 rounded-full backdrop-blur-sm"
         >
           <Info className="w-4 h-4 mr-2" />

@@ -1,34 +1,24 @@
 import { useState } from "react";
-import { ArrowLeft, Upload, FileText, CheckCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Upload, FileText, CheckCircle, Loader2, Trash2, UserPlus, UserCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useLabReports } from "@/hooks/useLabReports";
 import tiaLogo from "@/assets/tia-butterfly-logo.png";
-
-interface AnalysisResult {
-  tsh_level: number | null;
-  t3_level: number | null;
-  t4_level: number | null;
-  tsh_status: string;
-  t3_status: string;
-  t4_status: string;
-  summary: string;
-  recommendations: string[];
-  synced: boolean;
-}
 
 const LabReportAnalysis = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { reports, latestReport, addReport, deleteReport, toggleAddToProfile } = useLabReports();
   const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [progress, setProgress] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [justAnalyzedId, setJustAnalyzedId] = useState<string | null>(null);
 
   // Helper function to determine status based on thyroid values
   const determineStatus = (value: number, type: 'TSH' | 'T3' | 'T4'): string => {
@@ -48,55 +38,30 @@ const LabReportAnalysis = () => {
     return 'unknown';
   };
 
-  // Helper function to generate summary based on values
   const generateSummary = (tsh: number | null, t3: number | null, t4: number | null): string => {
     const statuses = [];
     if (tsh !== null) statuses.push(`TSH is ${determineStatus(tsh, 'TSH')}`);
     if (t3 !== null) statuses.push(`T3 is ${determineStatus(t3, 'T3')}`);
     if (t4 !== null) statuses.push(`T4 is ${determineStatus(t4, 'T4')}`);
-
     if (statuses.length === 0) return 'Lab report analyzed. Please consult your doctor for interpretation.';
-
     const hasAbnormal = statuses.some(s => s.includes('elevated') || s.includes('low'));
-    
-    if (!hasAbnormal) {
-      return `Your thyroid levels appear to be within normal ranges. ${statuses.join(', ')}. Continue regular monitoring.`;
-    }
-
+    if (!hasAbnormal) return `Your thyroid levels appear to be within normal ranges. ${statuses.join(', ')}. Continue regular monitoring.`;
     return `Your thyroid levels show some variations that warrant attention. ${statuses.join(', ')}. Please consult your healthcare provider for personalized guidance.`;
   };
 
-  // Helper function to generate recommendations
   const generateRecommendations = (tsh: number | null, t3: number | null, t4: number | null): string[] => {
-    const recommendations: string[] = [];
-
-    if (tsh !== null && determineStatus(tsh, 'TSH') === 'elevated') {
-      recommendations.push('Your TSH is elevated. This may indicate hypothyroidism. Consider scheduling an appointment with your endocrinologist.');
+    const recs: string[] = [];
+    if (tsh !== null && determineStatus(tsh, 'TSH') === 'elevated') recs.push('Your TSH is elevated. This may indicate hypothyroidism. Consider scheduling an appointment with your endocrinologist.');
+    if (tsh !== null && determineStatus(tsh, 'TSH') === 'low') recs.push('Your TSH is low. This may indicate hyperthyroidism. Consult your doctor for further evaluation.');
+    if (t4 !== null && determineStatus(t4, 'T4') === 'low') recs.push('Your T4 level is low. Ensure adequate iodine intake and discuss thyroid medication with your doctor.');
+    if (t4 !== null && determineStatus(t4, 'T4') === 'elevated') recs.push('Your T4 level is elevated. Review your thyroid medication dosage with your healthcare provider.');
+    if (t3 !== null && determineStatus(t3, 'T3') === 'low') recs.push('Your T3 level is low. This may affect energy levels. Discuss supplementation options with your doctor.');
+    if (t3 !== null && determineStatus(t3, 'T3') === 'elevated') recs.push('Your T3 level is elevated. Monitor for symptoms of hyperthyroidism and adjust treatment as needed.');
+    if (recs.length === 0) {
+      recs.push('Continue with regular thyroid monitoring and maintain your current health routine.');
+      recs.push('Schedule follow-up tests as recommended by your healthcare provider.');
     }
-    if (tsh !== null && determineStatus(tsh, 'TSH') === 'low') {
-      recommendations.push('Your TSH is low. This may indicate hyperthyroidism. Consult your doctor for further evaluation.');
-    }
-
-    if (t4 !== null && determineStatus(t4, 'T4') === 'low') {
-      recommendations.push('Your T4 level is low. Ensure adequate iodine intake and discuss thyroid medication with your doctor.');
-    }
-    if (t4 !== null && determineStatus(t4, 'T4') === 'elevated') {
-      recommendations.push('Your T4 level is elevated. Review your thyroid medication dosage with your healthcare provider.');
-    }
-
-    if (t3 !== null && determineStatus(t3, 'T3') === 'low') {
-      recommendations.push('Your T3 level is low. This may affect energy levels. Discuss supplementation options with your doctor.');
-    }
-    if (t3 !== null && determineStatus(t3, 'T3') === 'elevated') {
-      recommendations.push('Your T3 level is elevated. Monitor for symptoms of hyperthyroidism and adjust treatment as needed.');
-    }
-
-    if (recommendations.length === 0) {
-      recommendations.push('Continue with regular thyroid monitoring and maintain your current health routine.');
-      recommendations.push('Schedule follow-up tests as recommended by your healthcare provider.');
-    }
-
-    return recommendations;
+    return recs;
   };
 
   const getStatusColor = (status: string) => {
@@ -104,7 +69,7 @@ const LabReportAnalysis = () => {
       case 'normal': return 'text-green-400';
       case 'elevated': return 'text-yellow-400';
       case 'low': return 'text-orange-400';
-      default: return 'text-gray-400';
+      default: return 'text-white/40';
     }
   };
 
@@ -120,24 +85,16 @@ const LabReportAnalysis = () => {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    // Check file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Please upload a file smaller than 10MB",
-        variant: "destructive",
-      });
+      toast({ title: "File too large", description: "Please upload a file smaller than 10MB", variant: "destructive" });
       return;
     }
-
     setSelectedFile(file);
-    setAnalysisResult(null);
+    setJustAnalyzedId(null);
   };
 
   const handleAnalyzeReport = async () => {
     if (!selectedFile) return;
-
     setIsUploading(true);
     setProgress(20);
 
@@ -145,81 +102,60 @@ const LabReportAnalysis = () => {
       setProgress(40);
       setIsAnalyzing(true);
 
-      // Create FormData and send to FastAPI backend (Render)
       const formData = new FormData();
       formData.append('file', selectedFile);
-
       setProgress(60);
-
 
       const response = await fetch('https://tia-backend-f3tn.onrender.com/upload/', {
         method: 'POST',
         body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status} ${response.statusText}`);
-      }
-
+      if (!response.ok) throw new Error(`Server error: ${response.status} ${response.statusText}`);
       setProgress(80);
 
       const data = await response.json();
-
       setProgress(100);
 
-      // Extract thyroid values from the API response
       const tshLevel = data.thyroid_values?.TSH ?? null;
       const t3Level = data.thyroid_values?.T3 ?? null;
       const t4Level = data.thyroid_values?.T4 ?? null;
-
-      // Generate status, summary, and recommendations
       const tshStatus = tshLevel !== null ? determineStatus(tshLevel, 'TSH') : 'unknown';
       const t3Status = t3Level !== null ? determineStatus(t3Level, 'T3') : 'unknown';
       const t4Status = t4Level !== null ? determineStatus(t4Level, 'T4') : 'unknown';
       const summary = generateSummary(tshLevel, t3Level, t4Level);
       const recommendations = generateRecommendations(tshLevel, t3Level, t4Level);
 
-      // Map the API response to our AnalysisResult interface
-      setAnalysisResult({
-        tsh_level: tshLevel,
-        t3_level: t3Level,
-        t4_level: t4Level,
-        tsh_status: tshStatus,
-        t3_status: t3Status,
-        t4_status: t4Status,
-        summary: summary,
-        recommendations: recommendations,
-        synced: data.synced ?? false,
+      // Save to centralized state
+      const saved = addReport({
+        tsh: tshLevel,
+        t3: t3Level,
+        t4: t4Level,
+        tshStatus,
+        t3Status,
+        t4Status,
+        interpretation: summary,
+        recommendations,
       });
 
-      toast({
-        title: "Report uploaded successfully!",
-        description: "TIA has analyzed your thyroid health.",
-      });
+      setJustAnalyzedId(saved.id);
 
-      setTimeout(() => {
-        toast({
-          title: "Analysis Complete!",
-          description: "Your report has been analyzed successfully",
-        });
-      }, 1500);
-
+      toast({ title: "Analysis Complete!", description: "Your report has been analyzed and saved." });
       setIsAnalyzing(false);
       setIsUploading(false);
       setProgress(0);
-
+      setSelectedFile(null);
     } catch (error) {
       console.error('Upload error:', error);
-      toast({
-        title: "Analysis failed",
-        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Analysis failed", description: error instanceof Error ? error.message : "Something went wrong.", variant: "destructive" });
       setIsUploading(false);
       setIsAnalyzing(false);
       setProgress(0);
     }
   };
+
+  // The report to show in the results section (just analyzed or latest)
+  const displayReport = justAnalyzedId ? reports.find(r => r.id === justAnalyzedId) : latestReport;
 
   return (
     <div className="min-h-screen relative overflow-hidden" style={{ backgroundColor: '#1E003D' }}>
@@ -231,10 +167,7 @@ const LabReportAnalysis = () => {
 
       {/* Back Button */}
       <div className="relative z-10 pt-24 px-6">
-        <button
-          onClick={() => navigate('/explore')}
-          className="group flex items-center text-white/80 hover:text-white transition-all duration-300 mb-8"
-        >
+        <button onClick={() => navigate('/explore')} className="group flex items-center text-white/80 hover:text-white transition-all duration-300 mb-8">
           <ArrowLeft className="w-5 h-5 mr-2 group-hover:drop-shadow-[0_0_12px_rgba(255,255,255,0.9)] transition-all duration-300" />
           <span className="group-hover:drop-shadow-[0_0_12px_rgba(255,255,255,0.9)] transition-all duration-300">Back to Features</span>
         </button>
@@ -245,11 +178,7 @@ const LabReportAnalysis = () => {
         <div className="max-w-4xl mx-auto text-center">
           <div className="flex justify-center mb-6">
             <div className="relative w-24 h-24 animate-float">
-              <img 
-                src={tiaLogo} 
-                alt="TIA Butterfly Logo" 
-                className="w-full h-full object-contain drop-shadow-[0_0_30px_rgba(236,72,153,0.8)]"
-              />
+              <img src={tiaLogo} alt="TIA Butterfly Logo" className="w-full h-full object-contain drop-shadow-[0_0_30px_rgba(236,72,153,0.8)]" />
             </div>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-blue-300 via-purple-300 to-pink-400 bg-clip-text text-transparent">
@@ -259,7 +188,7 @@ const LabReportAnalysis = () => {
             Upload your thyroid test reports (TSH, T3, T4) and let TIA analyze them with AI-powered insights.
           </p>
           <p className="text-sm text-pink-300/70 italic">
-            Your reports are securely stored and automatically synced across your health dashboard
+            Your reports are saved locally and synced across your health dashboard
           </p>
         </div>
       </section>
@@ -292,11 +221,7 @@ const LabReportAnalysis = () => {
                 )}
                 
                 <p className="text-white/70 text-center max-w-md text-lg">
-                  {isUploading 
-                    ? "TIA is reading your report with compassionate AI insights..."
-                    : selectedFile 
-                    ? "Ready to analyze! Click the button below to continue"
-                    : "Supported formats: PDF, PNG, JPG"}
+                  {isUploading ? "TIA is reading your report with compassionate AI insights..." : selectedFile ? "Ready to analyze! Click the button below to continue" : "Supported formats: PDF, PNG, JPG"}
                 </p>
 
                 {isUploading && (
@@ -316,33 +241,16 @@ const LabReportAnalysis = () => {
                         <span className="text-lg font-semibold">Choose File</span>
                       </div>
                     </label>
-                    <input
-                      id="file-upload"
-                      type="file"
-                      className="hidden"
-                      accept=".pdf,.jpg,.jpeg,.png,.txt"
-                      onChange={handleFileSelect}
-                      disabled={isUploading}
-                    />
+                    <input id="file-upload" type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.txt" onChange={handleFileSelect} disabled={isUploading} />
                   </>
                 )}
 
                 {selectedFile && !isUploading && (
                   <div className="flex space-x-4 animate-fade-in">
-                    <button
-                      onClick={() => {
-                        setSelectedFile(null);
-                        const input = document.getElementById('file-upload') as HTMLInputElement;
-                        if (input) input.value = '';
-                      }}
-                      className="px-8 py-3 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/30 hover:border-white/50 transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]"
-                    >
+                    <button onClick={() => { setSelectedFile(null); const input = document.getElementById('file-upload') as HTMLInputElement; if (input) input.value = ''; }} className="px-8 py-3 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/30 hover:border-white/50 transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]">
                       Choose Different File
                     </button>
-                    <button
-                      onClick={handleAnalyzeReport}
-                      className="px-8 py-3 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white shadow-[0_0_30px_rgba(236,72,153,0.6)] hover:shadow-[0_0_50px_rgba(236,72,153,0.9)] transition-all duration-300 hover:scale-105 font-semibold"
-                    >
+                    <button onClick={handleAnalyzeReport} className="px-8 py-3 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white shadow-[0_0_30px_rgba(236,72,153,0.6)] hover:shadow-[0_0_50px_rgba(236,72,153,0.9)] transition-all duration-300 hover:scale-105 font-semibold">
                       Analyze Report
                     </button>
                   </div>
@@ -353,95 +261,58 @@ const LabReportAnalysis = () => {
         </div>
       </section>
 
-      {/* Results Section */}
-      {analysisResult && (
+      {/* Latest Result Display */}
+      {displayReport && (
         <>
-          {/* Hormone Levels Cards */}
           <section className="relative z-10 px-6 pb-8">
             <div className="max-w-4xl mx-auto">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* TSH */}
-                <Card className={`bg-white/5 backdrop-blur-sm border-2 border-white/20 transition-all duration-300 ${getStatusGlow(analysisResult.tsh_status)}`}>
-                  <CardContent className="p-6 text-center">
-                    <h3 className="text-white/70 text-sm mb-2">TSH Level</h3>
-                    <p className={`text-4xl font-bold mb-2 ${getStatusColor(analysisResult.tsh_status)}`}>
-                      {analysisResult.tsh_level ? `${analysisResult.tsh_level}` : 'N/A'}
-                    </p>
-                    <p className="text-white/60 text-xs mb-3">µIU/mL</p>
-                    <div className={`inline-block px-3 py-1 rounded-full text-sm ${getStatusColor(analysisResult.tsh_status)} bg-white/10`}>
-                      {analysisResult.tsh_status}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* T3 */}
-                <Card className={`bg-white/5 backdrop-blur-sm border-2 border-white/20 transition-all duration-300 ${getStatusGlow(analysisResult.t3_status)}`}>
-                  <CardContent className="p-6 text-center">
-                    <h3 className="text-white/70 text-sm mb-2">T3 Level</h3>
-                    <p className={`text-4xl font-bold mb-2 ${getStatusColor(analysisResult.t3_status)}`}>
-                      {analysisResult.t3_level ? `${analysisResult.t3_level}` : 'N/A'}
-                    </p>
-                    <p className="text-white/60 text-xs mb-3">ng/dL</p>
-                    <div className={`inline-block px-3 py-1 rounded-full text-sm ${getStatusColor(analysisResult.t3_status)} bg-white/10`}>
-                      {analysisResult.t3_status}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* T4 */}
-                <Card className={`bg-white/5 backdrop-blur-sm border-2 border-white/20 transition-all duration-300 ${getStatusGlow(analysisResult.t4_status)}`}>
-                  <CardContent className="p-6 text-center">
-                    <h3 className="text-white/70 text-sm mb-2">T4 Level</h3>
-                    <p className={`text-4xl font-bold mb-2 ${getStatusColor(analysisResult.t4_status)}`}>
-                      {analysisResult.t4_level ? `${analysisResult.t4_level}` : 'N/A'}
-                    </p>
-                    <p className="text-white/60 text-xs mb-3">µg/dL</p>
-                    <div className={`inline-block px-3 py-1 rounded-full text-sm ${getStatusColor(analysisResult.t4_status)} bg-white/10`}>
-                      {analysisResult.t4_status}
-                    </div>
-                  </CardContent>
-                </Card>
+                {[
+                  { label: "TSH Level", value: displayReport.tsh, unit: "µIU/mL", status: displayReport.tshStatus },
+                  { label: "T3 Level", value: displayReport.t3, unit: "ng/dL", status: displayReport.t3Status },
+                  { label: "T4 Level", value: displayReport.t4, unit: "µg/dL", status: displayReport.t4Status },
+                ].map((item) => (
+                  <Card key={item.label} className={`bg-white/5 backdrop-blur-sm border-2 border-white/20 transition-all duration-300 ${getStatusGlow(item.status)}`}>
+                    <CardContent className="p-6 text-center">
+                      <h3 className="text-white/70 text-sm mb-2">{item.label}</h3>
+                      <p className={`text-4xl font-bold mb-2 ${getStatusColor(item.status)}`}>{item.value ?? 'N/A'}</p>
+                      <p className="text-white/60 text-xs mb-3">{item.unit}</p>
+                      <div className={`inline-block px-3 py-1 rounded-full text-sm ${getStatusColor(item.status)} bg-white/10`}>{item.status}</div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </div>
           </section>
 
-          {/* AI Insights */}
           <section className="relative z-10 px-6 pb-12">
             <div className="max-w-4xl mx-auto space-y-6">
-              {/* Summary */}
               <Card className="bg-white/5 backdrop-blur-sm border-2 border-purple-400/50 transition-all duration-300">
                 <CardContent className="p-8">
                   <div className="flex items-start space-x-4">
                     <div className="p-3 rounded-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20">
                       <FileText className="w-8 h-8 text-purple-300" />
                     </div>
-                    
                     <div className="flex-1">
                       <h3 className="text-xl font-bold text-white mb-3">AI Analysis Summary</h3>
-                      <p className="text-white/80 leading-relaxed">
-                        {analysisResult.summary}
-                      </p>
+                      <p className="text-white/80 leading-relaxed">{displayReport.interpretation}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Recommendations */}
               <Card className="bg-white/5 backdrop-blur-sm border-2 border-pink-400/50 transition-all duration-300">
                 <CardContent className="p-8">
                   <div className="flex items-start space-x-4">
                     <div className="p-3 rounded-full bg-gradient-to-br from-pink-500/20 via-purple-500/20 to-blue-500/20">
                       <CheckCircle className="w-8 h-8 text-pink-300" />
                     </div>
-                    
                     <div className="flex-1">
                       <h3 className="text-xl font-bold text-white mb-4">Personalized Recommendations</h3>
                       <div className="space-y-3">
-                        {analysisResult.recommendations?.map((rec, index) => (
+                        {displayReport.recommendations?.map((rec, index) => (
                           <div key={index} className="p-4 bg-white/5 rounded-lg border border-pink-400/30">
-                            <p className="text-white/80">
-                              {index + 1}. {rec}
-                            </p>
+                            <p className="text-white/80">{index + 1}. {rec}</p>
                           </div>
                         ))}
                       </div>
@@ -449,23 +320,65 @@ const LabReportAnalysis = () => {
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Sync Status */}
-              {analysisResult.synced && (
-                <Card className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 backdrop-blur-sm border-2 border-green-400/50">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-center space-x-3">
-                      <CheckCircle className="w-6 h-6 text-green-400 animate-pulse" />
-                      <p className="text-white font-medium">
-                        Data synced with Tracker, Dashboard, and Reminders!
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
             </div>
           </section>
         </>
+      )}
+
+      {/* Report History */}
+      {reports.length > 0 && (
+        <section className="relative z-10 px-6 pb-20">
+          <div className="max-w-4xl mx-auto">
+            <Card className="bg-white/5 backdrop-blur-sm border-2 border-purple-400/50 transition-all duration-300">
+              <CardContent className="p-8">
+                <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                  <FileText className="w-6 h-6 text-pink-300" />
+                  Report History ({reports.length})
+                </h3>
+                <div className="space-y-4">
+                  {reports.map((report) => (
+                    <div key={report.id} className={`bg-white/5 border rounded-xl p-5 transition-all duration-300 hover:bg-white/10 ${report.id === justAnalyzedId ? 'border-pink-400/60 shadow-[0_0_20px_rgba(236,72,153,0.3)]' : 'border-pink-400/20'}`}>
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <p className="text-white font-semibold">{new Date(report.uploadDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
+                            {report.id === justAnalyzedId && <Badge className="bg-pink-500/20 text-pink-300 border-pink-400/50 text-xs">Latest</Badge>}
+                            {report.addedToProfile && <Badge className="bg-green-500/20 text-green-300 border-green-400/50 text-xs">On Profile</Badge>}
+                          </div>
+                          <div className="flex gap-4 text-sm">
+                            <span className="text-white/60">TSH: <span className={getStatusColor(report.tshStatus)}>{report.tsh ?? 'N/A'}</span></span>
+                            <span className="text-white/60">T3: <span className={getStatusColor(report.t3Status)}>{report.t3 ?? 'N/A'}</span></span>
+                            <span className="text-white/60">T4: <span className={getStatusColor(report.t4Status)}>{report.t4 ?? 'N/A'}</span></span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleAddToProfile(report.id)}
+                            className={`rounded-full text-sm ${report.addedToProfile ? 'text-green-300 hover:text-green-200 hover:bg-green-500/10' : 'text-pink-300 hover:text-pink-200 hover:bg-pink-500/10'}`}
+                          >
+                            {report.addedToProfile ? <UserCheck className="w-4 h-4 mr-1" /> : <UserPlus className="w-4 h-4 mr-1" />}
+                            {report.addedToProfile ? "On Profile" : "Add to Profile"}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => { deleteReport(report.id); toast({ title: "Report deleted", description: "Removed from all pages." }); }}
+                            className="rounded-full text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
       )}
     </div>
   );

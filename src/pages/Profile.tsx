@@ -26,11 +26,17 @@ const Profile = () => {
   // Auth & profile
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(() => {
+    try { return localStorage.getItem("tia_avatar"); } catch { return null; }
+  });
 
   // Health details form
-  const [healthDetails, setHealthDetails] = useState({
-    age: "", gender: "", diagnosisType: "", emergencyContactName: "", emergencyContactPhone: "", doctorName: "", healthGoals: "",
+  const [healthDetails, setHealthDetails] = useState(() => {
+    try {
+      const saved = localStorage.getItem("tia_health_details");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return { age: "", gender: "", diagnosisType: "", emergencyContactName: "", emergencyContactPhone: "", doctorName: "", healthGoals: "" };
   });
 
   // Edit states
@@ -38,7 +44,9 @@ const Profile = () => {
   const [editForm, setEditForm] = useState({ full_name: "", email: "" });
   const [isEditingHealth, setIsEditingHealth] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
-  const [darkModeToggle, setDarkModeToggle] = useState(false);
+  const [darkModeToggle, setDarkModeToggle] = useState(() => {
+    try { return localStorage.getItem("tia_dark_mode") === "true"; } catch { return false; }
+  });
   const [notifPrefsOpen, setNotifPrefsOpen] = useState(false);
   const [notifMedication, setNotifMedication] = useState(true);
   const [notifLabTests, setNotifLabTests] = useState(true);
@@ -69,11 +77,25 @@ const Profile = () => {
     setTotalReminders(count ?? 0);
   };
 
+  // Persist health details
+  useEffect(() => {
+    try { localStorage.setItem("tia_health_details", JSON.stringify(healthDetails)); } catch {}
+  }, [healthDetails]);
+
+  // Persist dark mode toggle
+  useEffect(() => {
+    try { localStorage.setItem("tia_dark_mode", String(darkModeToggle)); } catch {}
+  }, [darkModeToggle]);
+
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => setAvatarPreview(reader.result as string);
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setAvatarPreview(base64);
+        try { localStorage.setItem("tia_avatar", base64); } catch {}
+      };
       reader.readAsDataURL(file);
       toast({ title: "🦋 Photo updated!", description: "Profile picture changed successfully." });
     }
@@ -279,7 +301,7 @@ const Profile = () => {
                 <Label className="text-white/70">Gender</Label>
                 <Select value={healthDetails.gender} onValueChange={(v) => setHealthDetails({ ...healthDetails, gender: v })} disabled={!isEditingHealth}>
                   <SelectTrigger className="bg-white/10 border-white/20 text-white disabled:opacity-60"><SelectValue placeholder="Select gender" /></SelectTrigger>
-                  <SelectContent className="bg-[#2a1050] border-white/20">
+                  <SelectContent className="bg-[#2a1050] border-white/20 z-50 [&_[role=option]]:text-white [&_[role=option]]:cursor-pointer [&_[role=option]:hover]:bg-white/15 [&_[role=option][data-highlighted]]:bg-white/15 [&_[role=option][data-highlighted]]:text-white">
                     <SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem><SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
@@ -288,7 +310,7 @@ const Profile = () => {
                 <Label className="text-white/70">Diagnosis Type</Label>
                 <Select value={healthDetails.diagnosisType} onValueChange={(v) => setHealthDetails({ ...healthDetails, diagnosisType: v })} disabled={!isEditingHealth}>
                   <SelectTrigger className="bg-white/10 border-white/20 text-white disabled:opacity-60"><SelectValue placeholder="Select diagnosis" /></SelectTrigger>
-                  <SelectContent className="bg-[#2a1050] border-white/20">
+                  <SelectContent className="bg-[#2a1050] border-white/20 z-50 [&_[role=option]]:text-white [&_[role=option]]:cursor-pointer [&_[role=option]:hover]:bg-white/15 [&_[role=option][data-highlighted]]:bg-white/15 [&_[role=option][data-highlighted]]:text-white">
                     <SelectItem value="hypothyroidism">Hypothyroidism</SelectItem><SelectItem value="hyperthyroidism">Hyperthyroidism</SelectItem>
                     <SelectItem value="subclinical-hypo">Subclinical Hypothyroidism</SelectItem><SelectItem value="subclinical-hyper">Subclinical Hyperthyroidism</SelectItem>
                     <SelectItem value="not-diagnosed">Not Diagnosed</SelectItem>

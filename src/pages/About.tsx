@@ -174,9 +174,9 @@ const About = () => {
           <section className="text-center py-10 border-t border-white/[0.06]">
             <Info className="w-5 h-5 text-white/20 mx-auto mb-4" />
             <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 text-white/30 text-sm">
-              <span>Version <span className="text-white/50">1.0.0</span></span>
-              <span>Updated <span className="text-white/50">February 2026</span></span>
-              <span>Contact <span className="text-white/50">support@tia-health.app</span></span>
+              <span>Version: <span className="text-white/50">1.0.0</span></span>
+              <span>Updated: <span className="text-white/50">February 2026</span></span>
+              <span>Contact: <span className="text-white/50">support@tia-health.app</span></span>
             </div>
           </section>
         </FadeInSection>

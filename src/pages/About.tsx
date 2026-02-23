@@ -71,7 +71,7 @@ const About = () => {
             <p className="text-lg md:text-xl text-white/60 max-w-2xl mx-auto mb-3 leading-relaxed">
               Your intelligent thyroid companion — anytime, anywhere.
             </p>
-            <p className="text-white/40 max-w-xl mx-auto leading-relaxed text-sm md:text-base">
+            <p className="max-w-xl mx-auto leading-relaxed text-sm md:text-base bg-gradient-to-r from-pink-300/40 via-purple-300/40 to-blue-300/40 bg-clip-text text-transparent">
               Empowering you with accessible, personalized health insights so you feel confident and in control of your thyroid journey.
             </p>
           </section>

@@ -45,9 +45,6 @@ const About = () => {
         <div className="absolute top-[10%] left-[10%] w-72 h-72 bg-gradient-to-br from-purple-500/15 to-pink-500/15 rounded-full blur-3xl animate-float-slow" />
         <div className="absolute bottom-[20%] right-[5%] w-96 h-96 bg-gradient-to-br from-pink-400/10 to-purple-400/10 rounded-full blur-3xl animate-float-reverse" />
         <div className="absolute top-[60%] left-[50%] w-64 h-64 bg-gradient-to-br from-blue-400/10 to-purple-500/10 rounded-full blur-3xl animate-float-slow" style={{ animationDelay: "5s" }} />
-        {/* Subtle floating butterfly */}
-        <img src={tiaLogo} alt="" className="absolute top-[15%] right-[8%] w-16 h-16 opacity-10 animate-float" style={{ animationDuration: "6s" }} />
-        <img src={tiaLogo} alt="" className="absolute bottom-[30%] left-[5%] w-12 h-12 opacity-[0.07] animate-float" style={{ animationDuration: "8s", animationDelay: "2s" }} />
       </div>
 
       <Navigation />

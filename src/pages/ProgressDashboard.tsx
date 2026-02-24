@@ -1,9 +1,10 @@
-import { ArrowLeft, TrendingUp, Activity, Heart, Target } from "lucide-react";
+import { ArrowLeft, TrendingUp, Activity, Target } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 import { useLabReports } from "@/hooks/useLabReports";
+import ThyroidStabilityScore from "@/components/ThyroidStabilityScore";
 
 const ProgressDashboard = () => {
   const navigate = useNavigate();
@@ -13,17 +14,6 @@ const ProgressDashboard = () => {
   const totalReports = reports.length;
   const latestTSH = latestReport?.tsh;
   const latestStatus = latestReport?.tshStatus ?? "unknown";
-
-  // Simple wellness score based on how many values are normal
-  const wellnessScore = (() => {
-    if (!latestReport) return 0;
-    let score = 0;
-    let count = 0;
-    if (latestReport.tshStatus) { count++; if (latestReport.tshStatus === "normal") score++; }
-    if (latestReport.t3Status) { count++; if (latestReport.t3Status === "normal") score++; }
-    if (latestReport.t4Status) { count++; if (latestReport.t4Status === "normal") score++; }
-    return count > 0 ? Math.round((score / count) * 100) : 0;
-  })();
 
   return (
     <div className="min-h-screen bg-deep-dark-purple relative overflow-hidden">
@@ -37,16 +27,19 @@ const ProgressDashboard = () => {
         </Button>
       </div>
 
-      <section className="relative z-10 px-6 pb-12">
+      <section className="relative z-10 px-6 pb-8">
         <div className="max-w-6xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-pink-300 via-purple-300 to-pink-400 bg-clip-text text-transparent">Your Health Progress</h1>
           <p className="text-xl text-white/90 max-w-2xl mx-auto">Track your thyroid health journey with comprehensive analytics and insights.</p>
         </div>
       </section>
 
+      {/* Thyroid Stability Score — Signature Feature */}
+      <ThyroidStabilityScore />
+
       {/* Stats Overview */}
       <section className="relative z-10 px-6 pb-8">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="bg-white/5 backdrop-blur-sm border-2 border-pink-400/50 hover:border-pink-400 transition-all duration-300 hover:shadow-[0_0_30px_hsl(330,80%,60%,0.4)] group">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
@@ -66,17 +59,6 @@ const ProgressDashboard = () => {
               </div>
               <h3 className="text-lg font-bold text-white mb-2">Reports Analyzed</h3>
               <p className="text-white/70 text-sm">Total lab analyses completed</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/5 backdrop-blur-sm border-2 border-blue-400/50 hover:border-blue-400 transition-all duration-300 hover:shadow-[0_0_30px_hsl(210,80%,60%,0.4)] group">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 group-hover:from-pink-500/30 group-hover:to-purple-500/30 transition-all"><Heart className="w-8 h-8 text-blue-300" /></div>
-                <span className="text-3xl font-bold text-blue-300">{wellnessScore}%</span>
-              </div>
-              <h3 className="text-lg font-bold text-white mb-2">Wellness Score</h3>
-              <p className="text-white/70 text-sm">Based on latest lab values</p>
             </CardContent>
           </Card>
         </div>

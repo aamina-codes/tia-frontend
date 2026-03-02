@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 import { useLabReports } from "@/hooks/useLabReports";
 import ThyroidStabilityScore from "@/components/ThyroidStabilityScore";
+import SmartInsights from "@/components/SmartInsights";
 
 const ProgressDashboard = () => {
   const navigate = useNavigate();
@@ -34,8 +35,10 @@ const ProgressDashboard = () => {
         </div>
       </section>
 
-      {/* Thyroid Stability Score — Signature Feature */}
       <ThyroidStabilityScore />
+
+      {/* Smart Insights — AI Correlation Engine */}
+      <SmartInsights />
 
       {/* Stats Overview */}
       <section className="relative z-10 px-6 pb-8">

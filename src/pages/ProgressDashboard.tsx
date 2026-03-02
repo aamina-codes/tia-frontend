@@ -6,12 +6,16 @@ import Navigation from "@/components/Navigation";
 import { useLabReports } from "@/hooks/useLabReports";
 import ThyroidStabilityScore from "@/components/ThyroidStabilityScore";
 import SmartInsights from "@/components/SmartInsights";
+import RedFlagSystem from "@/components/RedFlagSystem";
+import RootCauseAnalyzer from "@/components/RootCauseAnalyzer";
+import ThyroidTimeline from "@/components/ThyroidTimeline";
+import ConsultationSummary from "@/components/ConsultationSummary";
+import LifestyleCoaching from "@/components/LifestyleCoaching";
 
 const ProgressDashboard = () => {
   const navigate = useNavigate();
   const { reports, latestReport } = useLabReports();
 
-  // Compute dynamic stats from lab reports
   const totalReports = reports.length;
   const latestTSH = latestReport?.tsh;
   const latestStatus = latestReport?.tshStatus ?? "unknown";
@@ -35,10 +39,17 @@ const ProgressDashboard = () => {
         </div>
       </section>
 
+      {/* 🛡 Red Flag System — top priority, responsible alerts */}
+      <RedFlagSystem />
+
+      {/* 🦋 Thyroid Stability Score */}
       <ThyroidStabilityScore />
 
-      {/* Smart Insights — AI Correlation Engine */}
+      {/* 📊 Smart Insights — AI Correlation Engine */}
       <SmartInsights />
+
+      {/* 🔬 Root Cause "What Changed?" Analyzer */}
+      <RootCauseAnalyzer />
 
       {/* Stats Overview */}
       <section className="relative z-10 px-6 pb-8">
@@ -67,38 +78,14 @@ const ProgressDashboard = () => {
         </div>
       </section>
 
-      {/* Recent Reports Timeline */}
-      <section className="relative z-10 px-6 pb-8">
-        <div className="max-w-6xl mx-auto">
-          <Card className="bg-white/5 backdrop-blur-sm border-2 border-pink-400/50 hover:border-pink-400 transition-all duration-300 hover:shadow-[0_0_40px_hsl(330,80%,60%,0.5)]">
-            <CardContent className="p-6">
-              <h3 className="text-xl font-bold text-white mb-4">Recent Lab Reports</h3>
-              {reports.length > 0 ? (
-                <div className="space-y-3">
-                  {reports.slice(0, 5).map((r) => (
-                    <div key={r.id} className="bg-white/5 rounded-lg border border-pink-400/20 p-4 flex flex-col md:flex-row md:items-center justify-between gap-2">
-                      <div>
-                        <p className="text-white font-medium">{new Date(r.uploadDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
-                        <div className="flex gap-4 text-sm text-white/60 mt-1">
-                          <span>TSH: <span className="text-pink-300">{r.tsh ?? "N/A"}</span></span>
-                          <span>T3: <span className="text-purple-300">{r.t3 ?? "N/A"}</span></span>
-                          <span>T4: <span className="text-blue-300">{r.t4 ?? "N/A"}</span></span>
-                        </div>
-                      </div>
-                      <span className={`text-xs px-3 py-1 rounded-full ${r.tshStatus === 'normal' ? 'bg-green-500/20 text-green-300' : r.tshStatus === 'elevated' ? 'bg-yellow-500/20 text-yellow-300' : r.tshStatus === 'low' ? 'bg-orange-500/20 text-orange-300' : 'bg-white/10 text-white/50'}`}>{r.tshStatus}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Target className="w-12 h-12 text-pink-300 mx-auto mb-3" />
-                  <p className="text-white/70">No reports yet. Upload a lab report to see your progress.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </section>
+      {/* 📅 Thyroid Journey Timeline */}
+      <ThyroidTimeline />
+
+      {/* 📄 Doctor Consultation Summary */}
+      <ConsultationSummary />
+
+      {/* 🌿 Lifestyle Coaching */}
+      <LifestyleCoaching />
 
       {/* Goals Section */}
       <section className="relative z-10 px-6 pb-20">

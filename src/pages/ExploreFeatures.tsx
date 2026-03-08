@@ -8,46 +8,54 @@ import {
   Bell, 
   BarChart3, 
   UserPlus,
-  ArrowLeft
+  ArrowLeft,
+  Crown
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { PremiumBadge } from "@/components/PremiumGate";
 
 const features = [
   {
     icon: FileText,
     title: "Smart Lab Report Analysis",
     description: "Upload your thyroid test results and get instant AI-powered insights and explanations in simple terms.",
-    path: "/lab-report"
+    path: "/lab-report",
+    premium: false,
   },
   {
     icon: Activity,
     title: "Thyroid Health Tracker",
     description: "Monitor your symptoms, medications, and lifestyle factors all in one intelligent dashboard.",
-    path: "/health-tracker"
+    path: "/health-tracker",
+    premium: false,
   },
   {
     icon: MessageCircle,
     title: "TIA Chatbot",
     description: "Ask questions anytime and get personalized answers about your thyroid health journey.",
-    path: "/chatbot"
+    path: "/chatbot",
+    premium: false,
   },
   {
     icon: Bell,
     title: "Reminders & Alerts",
     description: "Never miss a medication dose or follow-up appointment with smart notifications.",
-    path: "/reminders"
+    path: "/reminders",
+    premium: false,
   },
   {
     icon: BarChart3,
     title: "Progress Dashboard",
-    description: "Visualize your health trends over time with beautiful, easy-to-understand charts.",
-    path: "/progress"
+    description: "Visualize your health trends with stability scores, smart insights, and doctor-ready summaries.",
+    path: "/progress",
+    premium: true,
   },
   {
     icon: UserPlus,
     title: "Doctor Connect",
     description: "Share your health data seamlessly with your healthcare provider for better collaboration.",
-    path: "/doctor-connect"
+    path: "/doctor-connect",
+    premium: false,
   }
 ];
 

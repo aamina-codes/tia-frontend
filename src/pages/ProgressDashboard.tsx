@@ -93,8 +93,10 @@ const ProgressDashboard = () => {
         <ConsultationSummary />
       </PremiumGate>
 
-      {/* 🌿 Lifestyle Coaching */}
-      <LifestyleCoaching />
+      {/* 🌿 Lifestyle Coaching — Premium */}
+      <PremiumGate feature="lifestyleCoaching" fallbackMessage="Get personalized weekly health tips tailored to your thyroid patterns.">
+        <LifestyleCoaching />
+      </PremiumGate>
 
       {/* Goals Section */}
       <section className="relative z-10 px-6 pb-20">

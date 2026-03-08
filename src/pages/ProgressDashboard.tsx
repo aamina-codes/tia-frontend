@@ -11,6 +11,7 @@ import RootCauseAnalyzer from "@/components/RootCauseAnalyzer";
 import ThyroidTimeline from "@/components/ThyroidTimeline";
 import ConsultationSummary from "@/components/ConsultationSummary";
 import LifestyleCoaching from "@/components/LifestyleCoaching";
+import PremiumGate from "@/components/PremiumGate";
 
 const ProgressDashboard = () => {
   const navigate = useNavigate();

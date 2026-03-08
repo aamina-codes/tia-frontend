@@ -17,7 +17,7 @@ const Reminders = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const currentMonth = new Date(2026, 1, 1); // February 2026
+  const currentMonth = new Date(); // Current month
 
   const handleSaveReminder = (reminder: Reminder) => {
     setReminders((prev) => [...prev, reminder]);

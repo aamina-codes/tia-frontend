@@ -114,8 +114,9 @@ const ExploreFeatures = () => {
                     </div>
                   </div>
                   
-                  <h3 className="text-2xl font-bold text-white mb-4">
+                  <h3 className="text-2xl font-bold text-white mb-4 flex items-center justify-center gap-2">
                     {feature.title}
+                    {feature.premium && <PremiumBadge />}
                   </h3>
                   
                   <p className="text-white/80 leading-relaxed">

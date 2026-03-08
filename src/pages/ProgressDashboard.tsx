@@ -43,8 +43,10 @@ const ProgressDashboard = () => {
       {/* 🛡 Red Flag System — top priority, responsible alerts */}
       <RedFlagSystem />
 
-      {/* 🦋 Thyroid Stability Score */}
-      <ThyroidStabilityScore />
+      {/* 🦋 Thyroid Stability Score — Premium */}
+      <PremiumGate feature="stabilityScore" fallbackMessage="Unlock your personalized Thyroid Stability Score with TIA Plus.">
+        <ThyroidStabilityScore />
+      </PremiumGate>
 
       {/* 📊 Smart Insights — AI Correlation Engine */}
       <SmartInsights />

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { ArrowLeft, TrendingUp, Plus, Heart, FileText } from "lucide-react";
+import { ArrowLeft, TrendingUp, Plus, Heart, FileText, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

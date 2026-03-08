@@ -48,8 +48,10 @@ const ProgressDashboard = () => {
         <ThyroidStabilityScore />
       </PremiumGate>
 
-      {/* 📊 Smart Insights — AI Correlation Engine */}
-      <SmartInsights />
+      {/* 📊 Smart Insights — Premium */}
+      <PremiumGate feature="smartInsights" fallbackMessage="Get AI-powered correlations between your labs, mood, and lifestyle.">
+        <SmartInsights />
+      </PremiumGate>
 
       {/* 🔬 Root Cause "What Changed?" Analyzer */}
       <RootCauseAnalyzer />

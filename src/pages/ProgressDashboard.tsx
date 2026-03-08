@@ -11,6 +11,7 @@ import RootCauseAnalyzer from "@/components/RootCauseAnalyzer";
 import ThyroidTimeline from "@/components/ThyroidTimeline";
 import ConsultationSummary from "@/components/ConsultationSummary";
 import LifestyleCoaching from "@/components/LifestyleCoaching";
+import PremiumGate from "@/components/PremiumGate";
 
 const ProgressDashboard = () => {
   const navigate = useNavigate();
@@ -42,14 +43,20 @@ const ProgressDashboard = () => {
       {/* 🛡 Red Flag System — top priority, responsible alerts */}
       <RedFlagSystem />
 
-      {/* 🦋 Thyroid Stability Score */}
-      <ThyroidStabilityScore />
+      {/* 🦋 Thyroid Stability Score — Premium */}
+      <PremiumGate feature="stabilityScore" fallbackMessage="Unlock your personalized Thyroid Stability Score with TIA Plus.">
+        <ThyroidStabilityScore />
+      </PremiumGate>
 
-      {/* 📊 Smart Insights — AI Correlation Engine */}
-      <SmartInsights />
+      {/* 📊 Smart Insights — Premium */}
+      <PremiumGate feature="smartInsights" fallbackMessage="Get AI-powered correlations between your labs, mood, and lifestyle.">
+        <SmartInsights />
+      </PremiumGate>
 
-      {/* 🔬 Root Cause "What Changed?" Analyzer */}
-      <RootCauseAnalyzer />
+      {/* 🔬 Root Cause Analyzer — Premium */}
+      <PremiumGate feature="rootCauseAnalyzer" fallbackMessage="See what changed between your lab reports with intelligent analysis.">
+        <RootCauseAnalyzer />
+      </PremiumGate>
 
       {/* Stats Overview */}
       <section className="relative z-10 px-6 pb-8">
@@ -81,11 +88,15 @@ const ProgressDashboard = () => {
       {/* 📅 Thyroid Journey Timeline */}
       <ThyroidTimeline />
 
-      {/* 📄 Doctor Consultation Summary */}
-      <ConsultationSummary />
+      {/* 📄 Doctor Consultation Summary — Premium */}
+      <PremiumGate feature="consultationSummary" fallbackMessage="Generate professional doctor-ready summaries of your health data.">
+        <ConsultationSummary />
+      </PremiumGate>
 
-      {/* 🌿 Lifestyle Coaching */}
-      <LifestyleCoaching />
+      {/* 🌿 Lifestyle Coaching — Premium */}
+      <PremiumGate feature="lifestyleCoaching" fallbackMessage="Get personalized weekly health tips tailored to your thyroid patterns.">
+        <LifestyleCoaching />
+      </PremiumGate>
 
       {/* Goals Section */}
       <section className="relative z-10 px-6 pb-20">

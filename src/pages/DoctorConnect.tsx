@@ -1,12 +1,83 @@
-import { ArrowLeft, Upload, Share2, MessageSquare, FileText, UserCheck } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowLeft, Upload, Share2, MessageSquare, FileText, UserCheck, Trash2, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import Navigation from "@/components/Navigation";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+interface Report {
+  id: string;
+  report_name: string;
+  report_type: string;
+  created_at: string;
+  report_url: string | null;
+}
 
 const DoctorConnect = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [reports, setReports] = useState<Report[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  const fetchReports = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from("lab_reports")
+      .select("id, report_name, report_type, created_at, report_url")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(10);
+    if (data) setReports(data);
+  };
+
+  useEffect(() => { fetchReports(); }, []);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { toast({ title: "Please sign in", variant: "destructive" }); return; }
+
+      const filePath = `${user.id}/${Date.now()}_${file.name}`;
+      const { error: uploadError } = await supabase.storage.from("lab-reports").upload(filePath, file);
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from("lab-reports").getPublicUrl(filePath);
+
+      const { error: dbError } = await supabase.from("lab_reports").insert({
+        user_id: user.id,
+        report_name: file.name,
+        report_type: file.type.includes("pdf") ? "pdf" : "image",
+        report_url: urlData.publicUrl,
+        file_size: file.size,
+      });
+      if (dbError) throw dbError;
+
+      toast({ title: "Report uploaded!", description: file.name });
+      fetchReports();
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    const { error } = await supabase.from("lab_reports").delete().eq("id", id);
+    if (!error) {
+      setReports((prev) => prev.filter((r) => r.id !== id));
+      toast({ title: "Report deleted", description: name });
+    } else {
+      toast({ title: "Error", description: "Failed to delete report.", variant: "destructive" });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-deep-dark-purple relative overflow-hidden">
@@ -56,50 +127,55 @@ const DoctorConnect = () => {
                 </div>
               </div>
 
-              <div className="space-y-3 mb-6">
-                <div className="bg-white/5 rounded-lg p-4 border border-pink-400/30 hover:border-pink-400/50 transition-all cursor-pointer">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <FileText className="w-5 h-5 text-pink-300" />
-                      <div>
-                        <p className="text-white font-semibold">Thyroid Panel - Nov 2024</p>
-                        <p className="text-white/60 text-sm">Lab Results • 2 pages</p>
+              <div className="space-y-3 mb-6 max-h-64 overflow-y-auto">
+                {reports.length > 0 ? reports.map((r) => (
+                  <div key={r.id} className="bg-white/5 rounded-lg p-4 border border-pink-400/30 hover:border-pink-400/50 transition-all">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3 min-w-0 flex-1">
+                        <FileText className="w-5 h-5 text-pink-300 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-white font-semibold truncate">{r.report_name}</p>
+                          <p className="text-white/60 text-sm">{r.report_type} • {new Date(r.created_at).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <Button 
+                          size="sm"
+                          className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-full"
+                        >
+                          <Share2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDelete(r.id, r.report_name)}
+                          className="text-white/40 hover:text-red-400 hover:bg-red-400/10 rounded-full"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
-                    <Button 
-                      size="sm"
-                      className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-full"
-                    >
-                      <Share2 className="w-4 h-4" />
-                    </Button>
                   </div>
-                </div>
-
-                <div className="bg-white/5 rounded-lg p-4 border border-pink-400/30 hover:border-pink-400/50 transition-all cursor-pointer">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <FileText className="w-5 h-5 text-purple-300" />
-                      <div>
-                        <p className="text-white font-semibold">Ultrasound Report - Oct 2024</p>
-                        <p className="text-white/60 text-sm">Imaging • 3 pages</p>
-                      </div>
-                    </div>
-                    <Button 
-                      size="sm"
-                      className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-full"
-                    >
-                      <Share2 className="w-4 h-4" />
-                    </Button>
+                )) : (
+                  <div className="bg-white/5 rounded-lg p-4 border border-pink-400/30 text-white/50 text-sm text-center">
+                    No reports uploaded yet
                   </div>
-                </div>
+                )}
               </div>
 
-              <Button 
-                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-full shadow-[0_0_20px_hsl(330,80%,50%,0.4)] hover:shadow-[0_0_30px_hsl(330,80%,50%,0.6)] transition-all duration-300"
-              >
-                <Upload className="w-5 h-5 mr-2" />
-                Upload New Report
-              </Button>
+              <label className="block">
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={handleUpload}
+                  className="hidden"
+                  disabled={uploading}
+                />
+                <div className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-full shadow-[0_0_20px_hsl(330,80%,50%,0.4)] hover:shadow-[0_0_30px_hsl(330,80%,50%,0.6)] transition-all duration-300 py-2.5 px-4 cursor-pointer font-medium text-sm">
+                  {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
+                  {uploading ? "Uploading..." : "Upload New Report"}
+                </div>
+              </label>
             </CardContent>
           </Card>
 

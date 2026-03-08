@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { ArrowLeft, TrendingUp, Plus, Heart, FileText } from "lucide-react";
+import { ArrowLeft, TrendingUp, Plus, Heart, FileText, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -51,6 +51,16 @@ const HealthTracker = () => {
   };
 
   useEffect(() => { fetchEntries(); }, []);
+
+  const handleDeleteEntry = async (id: string) => {
+    const { error } = await supabase.from('health_tracker').delete().eq('id', id);
+    if (!error) {
+      setEntries((prev) => prev.filter((e) => e.id !== id));
+      toast({ title: "Entry removed", description: "Health entry has been deleted." });
+    } else {
+      toast({ title: "Error", description: "Failed to delete entry.", variant: "destructive" });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -198,6 +208,34 @@ const HealthTracker = () => {
                 <div className="flex items-center space-x-2"><div className="w-4 h-4 rounded-full bg-purple-400"></div><span className="text-white/80 text-sm">T3</span></div>
                 <div className="flex items-center space-x-2"><div className="w-4 h-4 rounded-full bg-blue-400"></div><span className="text-white/80 text-sm">T4</span></div>
               </div>
+
+              {/* Entry list with delete */}
+              {entries.length > 0 && (
+                <div className="mt-6 space-y-2 max-h-60 overflow-y-auto">
+                  <h4 className="text-white/70 text-sm font-semibold mb-2">All Entries</h4>
+                  {[...entries].reverse().map((entry) => (
+                    <div key={entry.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-pink-400/20 hover:border-pink-400/40 transition-all">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 text-sm text-white/80">
+                          <span className="text-white/50">{format(new Date(entry.date), 'MMM dd, yyyy')}</span>
+                          {entry.tsh_level !== null && <span>TSH: {entry.tsh_level}</span>}
+                          {entry.t3_level !== null && <span>T3: {entry.t3_level}</span>}
+                          {entry.t4_level !== null && <span>T4: {entry.t4_level}</span>}
+                          {entry.mood && <span>{moodEmojis[entry.mood] || ''} {entry.mood}</span>}
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteEntry(entry.id)}
+                        className="text-white/40 hover:text-red-400 hover:bg-red-400/10 ml-2 flex-shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

@@ -88,8 +88,10 @@ const ProgressDashboard = () => {
       {/* 📅 Thyroid Journey Timeline */}
       <ThyroidTimeline />
 
-      {/* 📄 Doctor Consultation Summary */}
-      <ConsultationSummary />
+      {/* 📄 Doctor Consultation Summary — Premium */}
+      <PremiumGate feature="consultationSummary" fallbackMessage="Generate professional doctor-ready summaries of your health data.">
+        <ConsultationSummary />
+      </PremiumGate>
 
       {/* 🌿 Lifestyle Coaching */}
       <LifestyleCoaching />

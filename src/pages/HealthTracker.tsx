@@ -52,6 +52,16 @@ const HealthTracker = () => {
 
   useEffect(() => { fetchEntries(); }, []);
 
+  const handleDeleteEntry = async (id: string) => {
+    const { error } = await supabase.from('health_tracker').delete().eq('id', id);
+    if (!error) {
+      setEntries((prev) => prev.filter((e) => e.id !== id));
+      toast({ title: "Entry removed", description: "Health entry has been deleted." });
+    } else {
+      toast({ title: "Error", description: "Failed to delete entry.", variant: "destructive" });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);

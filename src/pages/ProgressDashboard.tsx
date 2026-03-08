@@ -53,8 +53,10 @@ const ProgressDashboard = () => {
         <SmartInsights />
       </PremiumGate>
 
-      {/* 🔬 Root Cause "What Changed?" Analyzer */}
-      <RootCauseAnalyzer />
+      {/* 🔬 Root Cause Analyzer — Premium */}
+      <PremiumGate feature="rootCauseAnalyzer" fallbackMessage="See what changed between your lab reports with intelligent analysis.">
+        <RootCauseAnalyzer />
+      </PremiumGate>
 
       {/* Stats Overview */}
       <section className="relative z-10 px-6 pb-8">

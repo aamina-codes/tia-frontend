@@ -1,7 +1,7 @@
 import { Brain, Heart, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import butterflyLogo from "@/assets/tia-butterfly-logo.png";
-import TodaysStatusCard from "@/components/TodaysStatusCard";
+
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -53,9 +53,6 @@ const HomePage = () => {
             className="w-16 h-16 drop-shadow-glow-butterfly cursor-pointer hover:scale-110 transition-transform duration-300"
           />
         </header>
-
-        {/* Today's Status — compact snapshot */}
-        <TodaysStatusCard variant="compact" />
 
         {/* About TIA Section */}
         <section className="py-12 px-6">

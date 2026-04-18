@@ -12,6 +12,7 @@ import ThyroidTimeline from "@/components/ThyroidTimeline";
 import ConsultationSummary from "@/components/ConsultationSummary";
 import LifestyleCoaching from "@/components/LifestyleCoaching";
 import PremiumGate from "@/components/PremiumGate";
+import TodaysStatusCard from "@/components/TodaysStatusCard";
 
 const ProgressDashboard = () => {
   const navigate = useNavigate();
@@ -39,6 +40,9 @@ const ProgressDashboard = () => {
           <p className="text-xl text-white/90 max-w-2xl mx-auto">Track your thyroid health journey with comprehensive analytics and insights.</p>
         </div>
       </section>
+
+      {/* Today's Status — unified score, trends, next actions */}
+      <TodaysStatusCard variant="full" />
 
       {/* 🛡 Red Flag System — top priority, responsible alerts */}
       <RedFlagSystem />

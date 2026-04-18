@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message } = await req.json();
+    const { message, userContext, history } = await req.json();
     
     if (!message) {
       return new Response(
@@ -62,8 +62,14 @@ Guidelines:
 - Keep responses concise but informative (2-4 sentences usually)
 - Do not use any emojis in your responses
 
-Be friendly, supportive, and focus on empowering users in their thyroid health journey while staying within your educational role.`
+Be friendly, supportive, and focus on empowering users in their thyroid health journey while staying within your educational role.
+
+${userContext ? `\n--- PATIENT CONTEXT (use this to personalize answers; refer to specific values when relevant) ---\n${userContext}\n--- END PATIENT CONTEXT ---\n\nWhen the user asks about "my report", "my results", "my levels", "my insights", or similar, use the context above to give a specific, personalized answer. If a value is missing from the context, gently say you don't see that value yet and suggest uploading a report.` : ''}`
           },
+          ...(Array.isArray(history) ? history.slice(-10).map((m: any) => ({
+            role: m.role === 'user' ? 'user' : 'assistant',
+            content: String(m.content || '')
+          })) : []),
           {
             role: 'user',
             content: message

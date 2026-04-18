@@ -19,6 +19,86 @@ import {
   getTestExplanation,
   EDUCATIONAL_DISCLAIMER
 } from "@/lib/thyroidDecisionTree";
+import { useLabReports } from "@/hooks/useLabReports";
+
+const PROFILE_STORAGE_KEY = "tia_profile_data";
+
+const buildUserContext = async (latestLocalReport: any): Promise<string> => {
+  const parts: string[] = [];
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, email')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (profile?.full_name) parts.push(`Patient name: ${profile.full_name}`);
+
+      const { data: report } = await supabase
+        .from('lab_reports')
+        .select('report_name, tsh_level, t3_level, t4_level, tsh_status, t3_status, t4_status, ai_summary, ai_recommendations, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (report) {
+        parts.push(`\nLatest Lab Report (${report.report_name}, uploaded ${new Date(report.created_at).toLocaleDateString()}):`);
+        if (report.tsh_level != null) parts.push(`- TSH: ${report.tsh_level} µIU/mL (${report.tsh_status || 'unknown'})`);
+        if (report.t3_level != null) parts.push(`- T3: ${report.t3_level} ng/dL (${report.t3_status || 'unknown'})`);
+        if (report.t4_level != null) parts.push(`- T4: ${report.t4_level} µg/dL (${report.t4_status || 'unknown'})`);
+        if (report.ai_summary) parts.push(`- AI Summary: ${report.ai_summary}`);
+        if (report.ai_recommendations) parts.push(`- AI Recommendations: ${report.ai_recommendations}`);
+      }
+
+      const { data: tracker } = await supabase
+        .from('health_tracker')
+        .select('date, tsh_level, t3_level, t4_level, mood, energy_level')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false })
+        .limit(5);
+      if (tracker && tracker.length > 0) {
+        parts.push(`\nRecent Health Tracker entries:`);
+        tracker.forEach((t) => {
+          const bits = [`Date: ${t.date}`];
+          if (t.tsh_level != null) bits.push(`TSH ${t.tsh_level}`);
+          if (t.t3_level != null) bits.push(`T3 ${t.t3_level}`);
+          if (t.t4_level != null) bits.push(`T4 ${t.t4_level}`);
+          if (t.mood) bits.push(`mood ${t.mood}`);
+          if (t.energy_level != null) bits.push(`energy ${t.energy_level}/10`);
+          parts.push(`- ${bits.join(', ')}`);
+        });
+      }
+    }
+  } catch (e) {
+    console.warn('Could not fetch Supabase context:', e);
+  }
+
+  try {
+    const localProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
+    if (localProfile) {
+      const p = JSON.parse(localProfile);
+      const personal: string[] = [];
+      if (p.age) personal.push(`Age: ${p.age}`);
+      if (p.gender) personal.push(`Gender: ${p.gender}`);
+      if (p.diagnosis) personal.push(`Diagnosis: ${p.diagnosis}`);
+      if (p.healthGoals) personal.push(`Health goals: ${p.healthGoals}`);
+      if (personal.length) parts.push(`\nPersonal info: ${personal.join(' | ')}`);
+    }
+  } catch {}
+
+  if (latestLocalReport && parts.findIndex(p => p.includes('Latest Lab Report')) === -1) {
+    parts.push(`\nLatest Lab Report (local, ${new Date(latestLocalReport.uploadDate).toLocaleDateString()}):`);
+    if (latestLocalReport.tsh != null) parts.push(`- TSH: ${latestLocalReport.tsh} (${latestLocalReport.tshStatus})`);
+    if (latestLocalReport.t3 != null) parts.push(`- T3: ${latestLocalReport.t3} (${latestLocalReport.t3Status})`);
+    if (latestLocalReport.t4 != null) parts.push(`- T4: ${latestLocalReport.t4} (${latestLocalReport.t4Status})`);
+    if (latestLocalReport.interpretation) parts.push(`- Interpretation: ${latestLocalReport.interpretation}`);
+    if (latestLocalReport.recommendations?.length) parts.push(`- Recommendations: ${latestLocalReport.recommendations.join('; ')}`);
+  }
+
+  return parts.length ? parts.join('\n') : '';
+};
 
 interface Message {
   role: "user" | "assistant";
@@ -39,10 +119,11 @@ interface DecisionState {
 const Chatbot = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { latestReport } = useLabReports();
   const [messages, setMessages] = useState<Message[]>([
     { 
       role: "assistant", 
-      content: "Hi! I'm TIA, your Thyroid Intelligent Assistant. How can I help you today?" 
+      content: "Hi! I'm TIA, your Thyroid Intelligent Assistant. I have access to your latest lab report and profile, so feel free to ask me anything about your results. How can I help you today?" 
     }
   ]);
   const [inputMessage, setInputMessage] = useState("");
@@ -198,8 +279,10 @@ const Chatbot = () => {
       setIsLoading(true);
       
       try {
+        const userContext = await buildUserContext(latestReport);
+        const history = messages.map(m => ({ role: m.role, content: m.content }));
         const { data, error } = await supabase.functions.invoke('chat', {
-          body: { message: userMessage }
+          body: { message: userMessage, userContext, history }
         });
 
         if (error) {

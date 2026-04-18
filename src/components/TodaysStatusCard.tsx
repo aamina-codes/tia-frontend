@@ -14,33 +14,33 @@ interface Props {
 const statusMeta: Record<Status, { label: string; ring: string; chip: string; bar: string; dot: string; text: string }> = {
   stable: {
     label: "Stable",
-    ring: "from-emerald-400 to-green-500",
-    chip: "bg-emerald-500/20 text-emerald-300 border-emerald-400/40",
-    bar: "from-emerald-400 to-green-500",
-    dot: "bg-emerald-400",
-    text: "text-emerald-300",
+    ring: "from-pink-400 to-purple-500",
+    chip: "bg-pink-500/15 text-pink-200 border-pink-400/40",
+    bar: "from-pink-400 to-purple-500",
+    dot: "bg-pink-300",
+    text: "text-pink-200",
   },
   mild: {
     label: "Mild Imbalance",
-    ring: "from-yellow-400 to-amber-500",
-    chip: "bg-yellow-500/20 text-yellow-300 border-yellow-400/40",
-    bar: "from-yellow-400 to-amber-500",
-    dot: "bg-yellow-400",
-    text: "text-yellow-300",
+    ring: "from-purple-400 to-pink-500",
+    chip: "bg-purple-500/15 text-purple-200 border-purple-400/40",
+    bar: "from-purple-400 to-pink-500",
+    dot: "bg-purple-300",
+    text: "text-purple-200",
   },
   critical: {
     label: "Needs Attention",
-    ring: "from-rose-400 to-red-500",
-    chip: "bg-rose-500/20 text-rose-300 border-rose-400/40",
-    bar: "from-rose-400 to-red-500",
-    dot: "bg-rose-400",
-    text: "text-rose-300",
+    ring: "from-pink-500 to-fuchsia-600",
+    chip: "bg-fuchsia-500/15 text-fuchsia-200 border-fuchsia-400/40",
+    bar: "from-pink-500 to-fuchsia-600",
+    dot: "bg-fuchsia-300",
+    text: "text-fuchsia-200",
   },
   unknown: {
     label: "No Data",
-    ring: "from-slate-400 to-slate-500",
+    ring: "from-white/30 to-white/10",
     chip: "bg-white/10 text-white/70 border-white/20",
-    bar: "from-slate-400 to-slate-500",
+    bar: "from-white/30 to-white/10",
     dot: "bg-white/40",
     text: "text-white/70",
   },
@@ -74,7 +74,7 @@ const TrendPill = ({ label, change }: { label: string; change: number | null }) 
   }
   const up = change > 0.5;
   const down = change < -0.5;
-  const color = Math.abs(change) < 1 ? "text-white/60" : up ? "text-rose-300" : "text-emerald-300";
+  const color = Math.abs(change) < 1 ? "text-white/60" : up ? "text-fuchsia-300" : "text-pink-300";
   const Icon = up ? ArrowUp : down ? ArrowDown : Minus;
   return (
     <div className="flex items-center justify-between bg-white/5 border border-white/10 rounded-lg px-3 py-2">
@@ -144,7 +144,7 @@ const TodaysStatusCard = ({ variant = "full" }: Props) => {
   return (
     <section className={`relative z-10 px-6 ${isCompact ? "py-6" : "pb-8"}`}>
       <div className="max-w-6xl mx-auto">
-        <Card className="bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-md border-2 border-white/10 hover:border-pink-400/40 transition-all duration-500 overflow-hidden">
+        <Card className="bg-white/5 backdrop-blur-sm border-2 border-pink-400/50 hover:border-pink-400 transition-all duration-300 hover:shadow-[0_0_40px_hsl(330,80%,60%,0.4)] overflow-hidden">
           <CardContent className={isCompact ? "p-6" : "p-8"}>
             {/* Header */}
             <div className="flex items-center justify-between mb-6">

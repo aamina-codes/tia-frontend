@@ -1,14 +1,22 @@
 import { useState, useEffect, useCallback } from "react";
 
+// Red flag item returned by the backend
+export interface RedFlagItem {
+  title: string;
+  message: string;
+  urgency: "High" | "Moderate" | "Low";
+}
+
 // Rich backend report shape returned by the new FastAPI /analyze-report endpoint
 export interface BackendReport {
   patient?: Record<string, any>;
-  report?: Record<string, any>;
+  report?: Record<string, any> & { red_flags?: RedFlagItem[] };
   thyroid_values?: Record<string, any>;
   analysis?: Record<string, any>;
   risk?: Record<string, any>;
   possible_conditions?: any[];
   recommendations?: any[];
+  red_flags?: RedFlagItem[];
   summary?: string;
 }
 
@@ -17,7 +25,7 @@ export interface LabReport {
   uploadDate: string;
   addedToProfile: boolean;
 
-  // Rich backend fields
+  // Rich backend fields — permanent source of truth
   patient: Record<string, any>;
   reportDetails: Record<string, any>;
   thyroidValues: Record<string, any>;
@@ -25,10 +33,12 @@ export interface LabReport {
   risk: Record<string, any>;
   possibleConditions: any[];
   recommendations: any[];
+  redFlags: RedFlagItem[];
   summary: string;
 
-  // Legacy convenience fields derived from backend response
-  // (kept so existing UI keeps rendering without frontend medical logic)
+  // ⚠️ TEMPORARY compatibility fields — derived from the backend response only.
+  // These exist solely so the current UI keeps rendering during migration.
+  // TODO: Remove once the Results UI reads directly from the rich backend fields above.
   tsh: number | null;
   t3: number | null;
   t4: number | null;
@@ -53,6 +63,9 @@ const saveReports = (reports: LabReport[]) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
 };
 
+// ⚠️ TEMPORARY helpers — used only to populate the legacy compatibility fields
+// from the backend response. No medical logic here: they just pluck values.
+// TODO: Remove alongside the legacy fields once the UI is fully migrated.
 const pickNumber = (obj: Record<string, any> | undefined, keys: string[]): number | null => {
   if (!obj) return null;
   for (const k of keys) {
@@ -104,11 +117,17 @@ export const useLabReports = () => {
   const addReport = useCallback((backendReport: BackendReport) => {
     const thyroidValues = backendReport.thyroid_values ?? {};
     const analysis = backendReport.analysis ?? {};
+    const reportDetails = backendReport.report ?? {};
 
+    // Red flags may be nested under report.red_flags or at the top level.
+    const redFlags: RedFlagItem[] =
+      backendReport.red_flags ?? reportDetails.red_flags ?? [];
+
+    // ⚠️ TEMPORARY — derive legacy fields for backward-compatible UI rendering.
+    // TODO: Remove once the Results UI consumes the rich backend fields directly.
     const tsh = pickNumber(thyroidValues, ["TSH", "tsh", "tsh_level"]);
     const t3 = pickNumber(thyroidValues, ["T3", "t3", "t3_level", "FT3", "ft3"]);
     const t4 = pickNumber(thyroidValues, ["T4", "t4", "t4_level", "FT4", "ft4"]);
-
     const tshStatus = pickStatus(analysis, thyroidValues, ["TSH", "tsh", "tsh_status"]);
     const t3Status = pickStatus(analysis, thyroidValues, ["T3", "t3", "t3_status", "FT3"]);
     const t4Status = pickStatus(analysis, thyroidValues, ["T4", "t4", "t4_status", "FT4"]);
@@ -118,15 +137,18 @@ export const useLabReports = () => {
       uploadDate: new Date().toISOString(),
       addedToProfile: false,
 
+      // Permanent backend-driven fields
       patient: backendReport.patient ?? {},
-      reportDetails: backendReport.report ?? {},
+      reportDetails,
       thyroidValues,
       analysis,
       risk: backendReport.risk ?? {},
       possibleConditions: backendReport.possible_conditions ?? [],
       recommendations: backendReport.recommendations ?? [],
+      redFlags,
       summary: backendReport.summary ?? "",
 
+      // ⚠️ TEMPORARY compatibility fields — remove after Results UI migration.
       tsh,
       t3,
       t4,

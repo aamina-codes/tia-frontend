@@ -67,7 +67,7 @@ const LabReportAnalysis = () => {
       formData.append('file', selectedFile);
       setProgress(60);
 
-      const response = await fetch('https://tia-backend-f3tn.onrender.com/upload/', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/analyze-report`, {
         method: 'POST',
         body: formData,
       });
@@ -78,28 +78,16 @@ const LabReportAnalysis = () => {
       const data = await response.json();
       setProgress(100);
 
-      const tshLevel = data.thyroid_values?.TSH ?? null;
-      const t3Level = data.thyroid_values?.T3 ?? null;
-      const t4Level = data.thyroid_values?.T4 ?? null;
-      const tshStatus = tshLevel !== null ? determineStatus(tshLevel, 'TSH') : 'unknown';
-      const t3Status = t3Level !== null ? determineStatus(t3Level, 'T3') : 'unknown';
-      const t4Status = t4Level !== null ? determineStatus(t4Level, 'T4') : 'unknown';
-      const summary = generateSummary(tshLevel, t3Level, t4Level);
-      const recommendations = generateRecommendations(tshLevel, t3Level, t4Level);
+      if (!data?.success || !data?.report) {
+        throw new Error(data?.message || "Analysis failed");
+      }
 
-      // Save to centralized state
-      const saved = addReport({
-        tsh: tshLevel,
-        t3: t3Level,
-        t4: t4Level,
-        tshStatus,
-        t3Status,
-        t4Status,
-        interpretation: summary,
-        recommendations,
-      });
+      // Backend now performs all medical analysis. Store the full report as-is.
+      const report = data.report;
+      const saved = addReport(report);
 
       setJustAnalyzedId(saved.id);
+
 
       toast({ title: "Analysis Complete!", description: "Your report has been analyzed and saved." });
       setIsAnalyzing(false);

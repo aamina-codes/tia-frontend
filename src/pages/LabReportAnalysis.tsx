@@ -20,49 +20,10 @@ const LabReportAnalysis = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [justAnalyzedId, setJustAnalyzedId] = useState<string | null>(null);
 
-  // Helper function to determine status based on thyroid values
-  const determineStatus = (value: number, type: 'TSH' | 'T3' | 'T4'): string => {
-    if (type === 'TSH') {
-      if (value < 0.4) return 'low';
-      if (value > 4.0) return 'elevated';
-      return 'normal';
-    } else if (type === 'T3') {
-      if (value < 80) return 'low';
-      if (value > 200) return 'elevated';
-      return 'normal';
-    } else if (type === 'T4') {
-      if (value < 5) return 'low';
-      if (value > 12) return 'elevated';
-      return 'normal';
-    }
-    return 'unknown';
-  };
+  // Note: All medical calculations (status, summary, recommendations) are now
+  // performed by the backend. The frontend only stores and displays results.
 
-  const generateSummary = (tsh: number | null, t3: number | null, t4: number | null): string => {
-    const statuses = [];
-    if (tsh !== null) statuses.push(`TSH is ${determineStatus(tsh, 'TSH')}`);
-    if (t3 !== null) statuses.push(`T3 is ${determineStatus(t3, 'T3')}`);
-    if (t4 !== null) statuses.push(`T4 is ${determineStatus(t4, 'T4')}`);
-    if (statuses.length === 0) return 'Lab report analyzed. Please consult your doctor for interpretation.';
-    const hasAbnormal = statuses.some(s => s.includes('elevated') || s.includes('low'));
-    if (!hasAbnormal) return `Your thyroid levels appear to be within normal ranges. ${statuses.join(', ')}. Continue regular monitoring.`;
-    return `Your thyroid levels show some variations that warrant attention. ${statuses.join(', ')}. Please consult your healthcare provider for personalized guidance.`;
-  };
 
-  const generateRecommendations = (tsh: number | null, t3: number | null, t4: number | null): string[] => {
-    const recs: string[] = [];
-    if (tsh !== null && determineStatus(tsh, 'TSH') === 'elevated') recs.push('Your TSH is elevated. This may indicate hypothyroidism. Consider scheduling an appointment with your endocrinologist.');
-    if (tsh !== null && determineStatus(tsh, 'TSH') === 'low') recs.push('Your TSH is low. This may indicate hyperthyroidism. Consult your doctor for further evaluation.');
-    if (t4 !== null && determineStatus(t4, 'T4') === 'low') recs.push('Your T4 level is low. Ensure adequate iodine intake and discuss thyroid medication with your doctor.');
-    if (t4 !== null && determineStatus(t4, 'T4') === 'elevated') recs.push('Your T4 level is elevated. Review your thyroid medication dosage with your healthcare provider.');
-    if (t3 !== null && determineStatus(t3, 'T3') === 'low') recs.push('Your T3 level is low. This may affect energy levels. Discuss supplementation options with your doctor.');
-    if (t3 !== null && determineStatus(t3, 'T3') === 'elevated') recs.push('Your T3 level is elevated. Monitor for symptoms of hyperthyroidism and adjust treatment as needed.');
-    if (recs.length === 0) {
-      recs.push('Continue with regular thyroid monitoring and maintain your current health routine.');
-      recs.push('Schedule follow-up tests as recommended by your healthcare provider.');
-    }
-    return recs;
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {

@@ -23,25 +23,52 @@ const LabReportAnalysis = () => {
   // Note: All medical calculations (status, summary, recommendations) are now
   // performed by the backend. The frontend only stores and displays results.
 
+  // Normalize a backend status/severity string to a color tone.
+  // Priority: severity ("Severe" > "Moderate" > "Mild" > "Normal") overrides status when present.
+  const toneFor = (status?: string, severity?: string): "green" | "yellow" | "orange" | "red" | "muted" => {
+    const sev = (severity || "").toLowerCase();
+    if (sev === "severe") return "red";
+    if (sev === "moderate") return "orange";
+    if (sev === "mild") return "yellow";
+    if (sev === "normal") return "green";
 
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'normal': return 'text-green-400';
-      case 'elevated': return 'text-yellow-400';
-      case 'low': return 'text-orange-400';
-      default: return 'text-white/40';
-    }
+    const s = (status || "").toLowerCase();
+    if (s === "normal") return "green";
+    if (s === "low") return "yellow";
+    if (s === "high") return "red";
+    return "muted";
   };
 
-  const getStatusGlow = (status: string) => {
-    switch (status) {
-      case 'normal': return 'shadow-[0_0_30px_rgba(34,197,94,0.5)]';
-      case 'elevated': return 'shadow-[0_0_30px_rgba(234,179,8,0.5)]';
-      case 'low': return 'shadow-[0_0_30px_rgba(251,146,60,0.5)]';
-      default: return '';
-    }
+  const toneText: Record<string, string> = {
+    green: "text-green-400",
+    yellow: "text-yellow-300",
+    orange: "text-orange-400",
+    red: "text-red-400",
+    muted: "text-white/60",
   };
+  const toneGlow: Record<string, string> = {
+    green: "shadow-[0_0_30px_rgba(34,197,94,0.45)] border-green-400/40",
+    yellow: "shadow-[0_0_30px_rgba(234,179,8,0.4)] border-yellow-400/40",
+    orange: "shadow-[0_0_30px_rgba(251,146,60,0.45)] border-orange-400/40",
+    red: "shadow-[0_0_30px_rgba(239,68,68,0.5)] border-red-400/40",
+    muted: "border-white/20",
+  };
+  const toneBadge: Record<string, string> = {
+    green: "bg-green-500/15 text-green-300 border border-green-400/40 shadow-[0_0_12px_rgba(34,197,94,0.35)]",
+    yellow: "bg-yellow-500/15 text-yellow-200 border border-yellow-400/40 shadow-[0_0_12px_rgba(234,179,8,0.3)]",
+    orange: "bg-orange-500/15 text-orange-200 border border-orange-400/40 shadow-[0_0_12px_rgba(251,146,60,0.35)]",
+    red: "bg-red-500/15 text-red-300 border border-red-400/40 shadow-[0_0_12px_rgba(239,68,68,0.4)]",
+    muted: "bg-white/10 text-white/70 border border-white/20",
+  };
+
+  // Extract a display value from an analysis entry or the raw thyroid_values map.
+  const readValue = (entry: any, raw: any): string | number => {
+    const v = entry?.value ?? entry?.level ?? entry?.result ?? raw;
+    if (v === null || v === undefined || v === "") return "N/A";
+    if (typeof v === "object") return v.value ?? v.level ?? "N/A";
+    return v;
+  };
+
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

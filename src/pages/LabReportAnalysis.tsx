@@ -240,64 +240,192 @@ const LabReportAnalysis = () => {
       {/* Latest Result Display */}
       {displayReport && (
         <>
-          <section className="relative z-10 px-6 pb-8">
-            <div className="max-w-4xl mx-auto">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[
-                  { label: "TSH Level", value: displayReport.tsh, unit: "µIU/mL", status: displayReport.tshStatus },
-                  { label: "T3 Level", value: displayReport.t3, unit: "ng/dL", status: displayReport.t3Status },
-                  { label: "T4 Level", value: displayReport.t4, unit: "µg/dL", status: displayReport.t4Status },
-                ].map((item) => (
-                  <Card key={item.label} className={`bg-white/5 backdrop-blur-sm border-2 border-white/20 transition-all duration-300 ${getStatusGlow(item.status)}`}>
-                    <CardContent className="p-6 text-center">
-                      <h3 className="text-white/70 text-sm mb-2">{item.label}</h3>
-                      <p className={`text-4xl font-bold mb-2 ${getStatusColor(item.status)}`}>{item.value ?? 'N/A'}</p>
-                      <p className="text-white/60 text-xs mb-3">{item.unit}</p>
-                      <div className={`inline-block px-3 py-1 rounded-full text-sm ${getStatusColor(item.status)} bg-white/10`}>{item.status}</div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          </section>
+          {(() => {
+            const analysis = displayReport.analysis ?? {};
+            const raw = displayReport.thyroidValues ?? {};
+            const markerKeys = ["TSH", "T3", "T4", "FT3", "FT4", "Anti_TPO"];
+            const markerLabels: Record<string, { label: string; unit: string }> = {
+              TSH: { label: "TSH", unit: "µIU/mL" },
+              T3: { label: "T3", unit: "ng/dL" },
+              T4: { label: "T4", unit: "µg/dL" },
+              FT3: { label: "Free T3", unit: "pg/mL" },
+              FT4: { label: "Free T4", unit: "ng/dL" },
+              Anti_TPO: { label: "Anti-TPO", unit: "IU/mL" },
+            };
+            const markers = markerKeys
+              .filter((k) => analysis?.[k] !== undefined || raw?.[k] !== undefined)
+              .map((k) => {
+                const entry = analysis?.[k] ?? {};
+                return {
+                  key: k,
+                  label: markerLabels[k].label,
+                  unit: markerLabels[k].unit,
+                  value: readValue(entry, raw?.[k]),
+                  status: entry?.status ?? "Unknown",
+                  severity: entry?.severity,
+                  tone: toneFor(entry?.status, entry?.severity),
+                };
+              });
 
-          <section className="relative z-10 px-6 pb-12">
-            <div className="max-w-4xl mx-auto space-y-6">
-              <Card className="bg-white/5 backdrop-blur-sm border-2 border-purple-400/50 transition-all duration-300">
-                <CardContent className="p-8">
-                  <div className="flex items-start space-x-4">
-                    <div className="p-3 rounded-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20">
-                      <FileText className="w-8 h-8 text-purple-300" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-white mb-3">AI Analysis Summary</h3>
-                      <p className="text-white/80 leading-relaxed">{displayReport.interpretation}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            const riskLevel: string = displayReport.risk?.level ?? displayReport.risk?.risk ?? "Unknown";
+            const riskTone = toneFor(riskLevel);
+            const healthScore = displayReport.risk?.score ?? displayReport.risk?.health_score;
+            const abnormalTests = markers.filter((m) => m.tone !== "green" && m.tone !== "muted");
+            const conditions: any[] = displayReport.possibleConditions ?? [];
+            const recs: any[] = displayReport.recommendations ?? [];
 
-              <Card className="bg-white/5 backdrop-blur-sm border-2 border-pink-400/50 transition-all duration-300">
-                <CardContent className="p-8">
-                  <div className="flex items-start space-x-4">
-                    <div className="p-3 rounded-full bg-gradient-to-br from-pink-500/20 via-purple-500/20 to-blue-500/20">
-                      <CheckCircle className="w-8 h-8 text-pink-300" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-white mb-4">Personalized Recommendations</h3>
-                      <div className="space-y-3">
-                        {displayReport.recommendations?.map((rec, index) => (
-                          <div key={index} className="p-4 bg-white/5 rounded-lg border border-pink-400/30">
-                            <p className="text-white/80">{index + 1}. {rec}</p>
-                          </div>
+            return (
+              <>
+                {markers.length > 0 && (
+                  <section className="relative z-10 px-6 pb-8">
+                    <div className="max-w-4xl mx-auto">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {markers.map((m) => (
+                          <Card key={m.key} className={`bg-white/5 backdrop-blur-sm border-2 transition-all duration-300 ${toneGlow[m.tone]}`}>
+                            <CardContent className="p-6 text-center">
+                              <h3 className="text-white/70 text-sm mb-2">{m.label}</h3>
+                              <p className={`text-4xl font-bold mb-2 ${toneText[m.tone]}`}>{m.value}</p>
+                              <p className="text-white/60 text-xs mb-3">{m.unit}</p>
+                              <div className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${toneBadge[m.tone]}`}>
+                                {m.status}
+                                {m.severity && m.severity !== "Normal" ? ` · ${m.severity}` : ""}
+                              </div>
+                            </CardContent>
+                          </Card>
                         ))}
                       </div>
                     </div>
+                  </section>
+                )}
+
+                <section className="relative z-10 px-6 pb-12">
+                  <div className="max-w-4xl mx-auto space-y-6">
+                    {/* Summary sections */}
+                    <Card className="bg-white/5 backdrop-blur-sm border-2 border-purple-400/50 transition-all duration-300">
+                      <CardContent className="p-8 space-y-6">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="p-3 rounded-full bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20">
+                            <FileText className="w-6 h-6 text-purple-300" />
+                          </div>
+                          <h3 className="text-xl font-bold text-white">AI Analysis Summary</h3>
+                        </div>
+
+                        {/* Overall Risk */}
+                        <div className="flex items-start gap-4">
+                          <Shield className="w-5 h-5 text-purple-300 mt-1 shrink-0" />
+                          <div className="flex-1">
+                            <p className="text-white/60 text-sm mb-1">Overall Risk</p>
+                            <span className={`inline-block px-4 py-1.5 rounded-full text-sm font-semibold ${toneBadge[riskTone]}`}>
+                              {riskLevel}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Health Score */}
+                        {healthScore !== undefined && healthScore !== null && (
+                          <div className="flex items-start gap-4">
+                            <Heart className="w-5 h-5 text-pink-300 mt-1 shrink-0" />
+                            <div className="flex-1">
+                              <p className="text-white/60 text-sm mb-1">Health Score</p>
+                              <p className="text-2xl font-bold bg-gradient-to-r from-pink-300 to-purple-300 bg-clip-text text-transparent">
+                                {healthScore} <span className="text-white/50 text-base font-normal">/ 100</span>
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Abnormal Tests */}
+                        <div className="flex items-start gap-4">
+                          <FlaskConical className="w-5 h-5 text-blue-300 mt-1 shrink-0" />
+                          <div className="flex-1">
+                            <p className="text-white/60 text-sm mb-2">Abnormal Tests</p>
+                            {abnormalTests.length === 0 ? (
+                              <span className={`inline-block px-3 py-1 rounded-full text-sm ${toneBadge.green}`}>None</span>
+                            ) : (
+                              <div className="flex flex-wrap gap-2">
+                                {abnormalTests.map((m) => (
+                                  <span key={m.key} className={`px-3 py-1 rounded-full text-xs font-medium ${toneBadge[m.tone]}`}>
+                                    {m.label}: {m.status}{m.severity ? ` (${m.severity})` : ""}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Possible Conditions */}
+                        <div className="flex items-start gap-4">
+                          <Stethoscope className="w-5 h-5 text-purple-300 mt-1 shrink-0" />
+                          <div className="flex-1">
+                            <p className="text-white/60 text-sm mb-2">Possible Conditions</p>
+                            {conditions.length === 0 ? (
+                              <span className={`inline-block px-3 py-1 rounded-full text-sm ${toneBadge.green}`}>
+                                No obvious thyroid disorder pattern detected
+                              </span>
+                            ) : (
+                              <div className="flex flex-wrap gap-2">
+                                {conditions.map((c, i) => {
+                                  const name = typeof c === "string" ? c : (c?.name ?? c?.condition ?? JSON.stringify(c));
+                                  const sev = typeof c === "object" ? (c?.severity ?? c?.likelihood) : undefined;
+                                  const tone = toneFor(undefined, sev) === "muted" ? "orange" : toneFor(undefined, sev);
+                                  return (
+                                    <span key={i} className={`px-3 py-1.5 rounded-full text-sm font-medium ${toneBadge[tone]}`}>
+                                      {name}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Summary text (if backend provides) */}
+                        {displayReport.summary && (
+                          <div className="flex items-start gap-4 pt-2 border-t border-white/10">
+                            <Sparkles className="w-5 h-5 text-pink-300 mt-1 shrink-0" />
+                            <p className="text-white/80 leading-relaxed">{displayReport.summary}</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* Recommendations */}
+                    <Card className="bg-white/5 backdrop-blur-sm border-2 border-pink-400/50 transition-all duration-300">
+                      <CardContent className="p-8">
+                        <div className="flex items-center gap-3 mb-6">
+                          <div className="p-3 rounded-full bg-gradient-to-br from-pink-500/20 via-purple-500/20 to-blue-500/20">
+                            <Lightbulb className="w-6 h-6 text-pink-300" />
+                          </div>
+                          <h3 className="text-xl font-bold text-white">Personalized Recommendations</h3>
+                        </div>
+                        {recs.length === 0 ? (
+                          <p className="text-white/70">No specific recommendations based on the current thyroid profile.</p>
+                        ) : (
+                          <ol className="space-y-4">
+                            {recs.map((rec, index) => {
+                              const text = typeof rec === "string" ? rec : (rec?.text ?? rec?.message ?? JSON.stringify(rec));
+                              return (
+                                <li key={index} className="flex items-start gap-4 p-4 bg-white/5 rounded-xl border border-pink-400/30">
+                                  <span className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-pink-500/30 to-purple-500/30 text-pink-200 text-sm font-semibold shrink-0">
+                                    {index + 1}
+                                  </span>
+                                  <div className="flex items-start gap-2 flex-1">
+                                    <CheckCircle className="w-4 h-4 text-pink-300 mt-1 shrink-0" />
+                                    <p className="text-white/85 leading-relaxed">{text}</p>
+                                  </div>
+                                </li>
+                              );
+                            })}
+                          </ol>
+                        )}
+                      </CardContent>
+                    </Card>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-          </section>
+                </section>
+              </>
+            );
+          })()}
+
         </>
       )}
 

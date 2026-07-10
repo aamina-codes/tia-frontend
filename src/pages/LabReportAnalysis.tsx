@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Upload, FileText, CheckCircle, Loader2, Trash2, UserPlus, UserCheck } from "lucide-react";
+import { ArrowLeft, Upload, FileText, CheckCircle, Loader2, Trash2, UserPlus, UserCheck, Shield, Heart, FlaskConical, Stethoscope, Lightbulb, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

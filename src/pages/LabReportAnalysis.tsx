@@ -450,9 +450,9 @@ const LabReportAnalysis = () => {
                             {report.addedToProfile && <Badge className="bg-green-500/20 text-green-300 border-green-400/50 text-xs">On Profile</Badge>}
                           </div>
                           <div className="flex gap-4 text-sm">
-                            <span className="text-white/60">TSH: <span className={getStatusColor(report.tshStatus)}>{report.tsh ?? 'N/A'}</span></span>
-                            <span className="text-white/60">T3: <span className={getStatusColor(report.t3Status)}>{report.t3 ?? 'N/A'}</span></span>
-                            <span className="text-white/60">T4: <span className={getStatusColor(report.t4Status)}>{report.t4 ?? 'N/A'}</span></span>
+                            <span className="text-white/60">TSH: <span className={toneText[toneFor(report.analysis?.TSH?.status, report.analysis?.TSH?.severity)]}>{report.tsh ?? 'N/A'}</span></span>
+                            <span className="text-white/60">T3: <span className={toneText[toneFor(report.analysis?.T3?.status, report.analysis?.T3?.severity)]}>{report.t3 ?? 'N/A'}</span></span>
+                            <span className="text-white/60">T4: <span className={toneText[toneFor(report.analysis?.T4?.status, report.analysis?.T4?.severity)]}>{report.t4 ?? 'N/A'}</span></span>
                           </div>
                         </div>
                         <div className="flex gap-2">

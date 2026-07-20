@@ -7,12 +7,24 @@ export interface RedFlagItem {
   urgency: "High" | "Moderate" | "Low";
 }
 
-// Rich backend report shape returned by the new FastAPI /analyze-report endpoint
+// Nested analysis section from POST /api/analyze-report
+export interface AnalysisSection {
+  analysis?: Record<string, any>;
+  risk?: Record<string, any>;
+  possible_conditions?: any[];
+  recommendations?: any[];
+  red_flags?: RedFlagItem[];
+  summary?: string;
+}
+
+// Rich backend report shape returned by the FastAPI /api/analyze-report endpoint.
+// The new schema nests medical analysis under `analysis`, but we accept legacy
+// top-level fields as a fallback so older cached responses still parse.
 export interface BackendReport {
   patient?: Record<string, any>;
   report?: Record<string, any> & { red_flags?: RedFlagItem[] };
   thyroid_values?: Record<string, any>;
-  analysis?: Record<string, any>;
+  analysis?: AnalysisSection | Record<string, any>;
   risk?: Record<string, any>;
   possible_conditions?: any[];
   recommendations?: any[];
@@ -116,12 +128,39 @@ export const useLabReports = () => {
 
   const addReport = useCallback((backendReport: BackendReport) => {
     const thyroidValues = backendReport.thyroid_values ?? {};
-    const analysis = backendReport.analysis ?? {};
     const reportDetails = backendReport.report ?? {};
 
-    // Red flags may be nested under report.red_flags or at the top level.
+    // New schema nests medical fields under `analysis`. Detect the nested
+    // shape (has any of risk/recommendations/etc.) and unwrap; otherwise
+    // treat `analysis` as the flat per-marker map (legacy shape).
+    const rawAnalysis = (backendReport.analysis ?? {}) as any;
+    const isNested =
+      rawAnalysis &&
+      typeof rawAnalysis === "object" &&
+      ("risk" in rawAnalysis ||
+        "recommendations" in rawAnalysis ||
+        "possible_conditions" in rawAnalysis ||
+        "red_flags" in rawAnalysis ||
+        "summary" in rawAnalysis ||
+        "analysis" in rawAnalysis);
+
+    const analysis: Record<string, any> = isNested
+      ? rawAnalysis.analysis ?? {}
+      : rawAnalysis;
+    const risk = (isNested ? rawAnalysis.risk : backendReport.risk) ?? {};
+    const possibleConditions =
+      (isNested ? rawAnalysis.possible_conditions : backendReport.possible_conditions) ?? [];
+    const recommendations =
+      (isNested ? rawAnalysis.recommendations : backendReport.recommendations) ?? [];
+    const summary =
+      (isNested ? rawAnalysis.summary : backendReport.summary) ?? "";
+
+    // Red flags may be nested under analysis.red_flags, report.red_flags, or top level.
     const redFlags: RedFlagItem[] =
-      backendReport.red_flags ?? reportDetails.red_flags ?? [];
+      (isNested ? rawAnalysis.red_flags : undefined) ??
+      backendReport.red_flags ??
+      reportDetails.red_flags ??
+      [];
 
     // ⚠️ TEMPORARY — derive legacy fields for backward-compatible UI rendering.
     // TODO: Remove once the Results UI consumes the rich backend fields directly.
@@ -142,11 +181,11 @@ export const useLabReports = () => {
       reportDetails,
       thyroidValues,
       analysis,
-      risk: backendReport.risk ?? {},
-      possibleConditions: backendReport.possible_conditions ?? [],
-      recommendations: backendReport.recommendations ?? [],
+      risk,
+      possibleConditions,
+      recommendations,
       redFlags,
-      summary: backendReport.summary ?? "",
+      summary,
 
       // ⚠️ TEMPORARY compatibility fields — remove after Results UI migration.
       tsh,
@@ -155,7 +194,7 @@ export const useLabReports = () => {
       tshStatus,
       t3Status,
       t4Status,
-      interpretation: backendReport.summary ?? "",
+      interpretation: summary,
     };
 
     setReports((prev) => [newReport, ...prev]);

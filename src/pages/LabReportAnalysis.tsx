@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useLabReports } from "@/hooks/useLabReports";
+import { analyzeReport, LabReportApiError } from "@/services/labReportApi";
 import tiaLogo from "@/assets/tia-butterfly-logo.png";
 
 const LabReportAnalysis = () => {
@@ -89,32 +90,17 @@ const LabReportAnalysis = () => {
     try {
       setProgress(40);
       setIsAnalyzing(true);
-
-      const formData = new FormData();
-      formData.append('file', selectedFile);
       setProgress(60);
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/analyze-report`, {
-        method: 'POST',
-        body: formData,
-      });
+      // Delegate transport + error normalization to the API service layer.
+      const report = await analyzeReport(selectedFile);
+      setProgress(90);
 
-      if (!response.ok) throw new Error(`Server error: ${response.status} ${response.statusText}`);
-      setProgress(80);
-
-      const data = await response.json();
+      // Backend performs all medical analysis. Store the full report as-is.
+      const saved = addReport(report);
       setProgress(100);
 
-      if (!data?.success || !data?.report) {
-        throw new Error(data?.message || "Analysis failed");
-      }
-
-      // Backend now performs all medical analysis. Store the full report as-is.
-      const report = data.report;
-      const saved = addReport(report);
-
       setJustAnalyzedId(saved.id);
-
 
       toast({ title: "Analysis Complete!", description: "Your report has been analyzed and saved." });
       setIsAnalyzing(false);
@@ -123,7 +109,13 @@ const LabReportAnalysis = () => {
       setSelectedFile(null);
     } catch (error) {
       console.error('Upload error:', error);
-      toast({ title: "Analysis failed", description: error instanceof Error ? error.message : "Something went wrong.", variant: "destructive" });
+      const description =
+        error instanceof LabReportApiError
+          ? error.message
+          : error instanceof Error
+          ? error.message
+          : "Something went wrong.";
+      toast({ title: "Analysis failed", description, variant: "destructive" });
       setIsUploading(false);
       setIsAnalyzing(false);
       setProgress(0);

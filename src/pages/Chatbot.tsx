@@ -93,8 +93,16 @@ const buildUserContext = async (latestLocalReport: any): Promise<string> => {
     if (latestLocalReport.tsh != null) parts.push(`- TSH: ${latestLocalReport.tsh} (${latestLocalReport.tshStatus})`);
     if (latestLocalReport.t3 != null) parts.push(`- T3: ${latestLocalReport.t3} (${latestLocalReport.t3Status})`);
     if (latestLocalReport.t4 != null) parts.push(`- T4: ${latestLocalReport.t4} (${latestLocalReport.t4Status})`);
+    if (latestLocalReport.ft3 != null) parts.push(`- Free T3: ${latestLocalReport.ft3} (${latestLocalReport.ft3Status})`);
+    if (latestLocalReport.ft4 != null) parts.push(`- Free T4: ${latestLocalReport.ft4} (${latestLocalReport.ft4Status})`);
+    if (latestLocalReport.antiTPO != null) parts.push(`- Anti-TPO: ${latestLocalReport.antiTPO} (${latestLocalReport.antiTPOStatus})`);
     if (latestLocalReport.interpretation) parts.push(`- Interpretation: ${latestLocalReport.interpretation}`);
-    if (latestLocalReport.recommendations?.length) parts.push(`- Recommendations: ${latestLocalReport.recommendations.join('; ')}`);
+    if (latestLocalReport.recommendations?.length) {
+      const recTexts = latestLocalReport.recommendations
+        .map((r: any) => (typeof r === 'string' ? r : (r?.text ?? r?.message ?? '')))
+        .filter(Boolean);
+      if (recTexts.length) parts.push(`- Recommendations: ${recTexts.join('; ')}`);
+    }
   }
 
   return parts.length ? parts.join('\n') : '';

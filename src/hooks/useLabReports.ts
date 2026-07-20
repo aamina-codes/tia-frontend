@@ -133,12 +133,17 @@ export const useLabReports = () => {
   }, []);
 
   const addReport = useCallback((backendReport: BackendReport) => {
-    const thyroidValues = backendReport.thyroid_values ?? {};
-    const reportDetails = backendReport.report ?? {};
+    // Backend now nests `patient` and `report` inside `thyroid_values` alongside
+    // the marker values (TSH, T3, T4, FT3, FT4, Anti_TPO). Unwrap them here so
+    // downstream code keeps working, and accept legacy top-level fields too.
+    const rawThyroid = (backendReport.thyroid_values ?? {}) as Record<string, any>;
+    const { patient: nestedPatient, report: nestedReport, ...thyroidMarkers } = rawThyroid;
 
-    // New schema nests medical fields under `analysis`. Detect the nested
-    // shape (has any of risk/recommendations/etc.) and unwrap; otherwise
-    // treat `analysis` as the flat per-marker map (legacy shape).
+    const patient = backendReport.patient ?? nestedPatient ?? {};
+    const reportDetails = backendReport.report ?? nestedReport ?? {};
+    const thyroidValues = thyroidMarkers;
+
+    // Analysis may be nested (new schema) or flat (legacy). Detect and unwrap.
     const rawAnalysis = (backendReport.analysis ?? {}) as any;
     const isNested =
       rawAnalysis &&
@@ -161,21 +166,28 @@ export const useLabReports = () => {
     const summary =
       (isNested ? rawAnalysis.summary : backendReport.summary) ?? "";
 
-    // Red flags may be nested under analysis.red_flags, report.red_flags, or top level.
     const redFlags: RedFlagItem[] =
       (isNested ? rawAnalysis.red_flags : undefined) ??
       backendReport.red_flags ??
       reportDetails.red_flags ??
       [];
 
-    // ⚠️ TEMPORARY — derive legacy fields for backward-compatible UI rendering.
+    // ⚠️ TEMPORARY — derive legacy per-marker fields for backward-compatible UI.
+    // Every marker may be null when the lab did not include that test.
     // TODO: Remove once the Results UI consumes the rich backend fields directly.
     const tsh = pickNumber(thyroidValues, ["TSH", "tsh", "tsh_level"]);
-    const t3 = pickNumber(thyroidValues, ["T3", "t3", "t3_level", "FT3", "ft3"]);
-    const t4 = pickNumber(thyroidValues, ["T4", "t4", "t4_level", "FT4", "ft4"]);
+    const t3 = pickNumber(thyroidValues, ["T3", "t3", "t3_level"]);
+    const t4 = pickNumber(thyroidValues, ["T4", "t4", "t4_level"]);
+    const ft3 = pickNumber(thyroidValues, ["FT3", "ft3", "free_t3", "Free_T3"]);
+    const ft4 = pickNumber(thyroidValues, ["FT4", "ft4", "free_t4", "Free_T4"]);
+    const antiTPO = pickNumber(thyroidValues, ["Anti_TPO", "anti_tpo", "AntiTPO", "TPO", "tpo"]);
+
     const tshStatus = pickStatus(analysis, thyroidValues, ["TSH", "tsh", "tsh_status"]);
-    const t3Status = pickStatus(analysis, thyroidValues, ["T3", "t3", "t3_status", "FT3"]);
-    const t4Status = pickStatus(analysis, thyroidValues, ["T4", "t4", "t4_status", "FT4"]);
+    const t3Status = pickStatus(analysis, thyroidValues, ["T3", "t3", "t3_status"]);
+    const t4Status = pickStatus(analysis, thyroidValues, ["T4", "t4", "t4_status"]);
+    const ft3Status = pickStatus(analysis, thyroidValues, ["FT3", "ft3", "Free_T3", "free_t3"]);
+    const ft4Status = pickStatus(analysis, thyroidValues, ["FT4", "ft4", "Free_T4", "free_t4"]);
+    const antiTPOStatus = pickStatus(analysis, thyroidValues, ["Anti_TPO", "anti_tpo", "AntiTPO", "TPO", "tpo"]);
 
     const newReport: LabReport = {
       id: crypto.randomUUID(),
@@ -183,7 +195,7 @@ export const useLabReports = () => {
       addedToProfile: false,
 
       // Permanent backend-driven fields
-      patient: backendReport.patient ?? {},
+      patient,
       reportDetails,
       thyroidValues,
       analysis,
@@ -197,9 +209,15 @@ export const useLabReports = () => {
       tsh,
       t3,
       t4,
+      ft3,
+      ft4,
+      antiTPO,
       tshStatus,
       t3Status,
       t4Status,
+      ft3Status,
+      ft4Status,
+      antiTPOStatus,
       interpretation: summary,
     };
 

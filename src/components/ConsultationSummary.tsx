@@ -59,29 +59,36 @@ const ConsultationSummary = () => {
   <p>Generated on ${new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} · Prepared for doctor consultation</p>
 </div>
 
-${latestReport ? `
+${latestReport ? (() => {
+  const items = [
+    { label: "TSH", value: latestReport.tsh, status: latestReport.tshStatus },
+    { label: "T3", value: latestReport.t3, status: latestReport.t3Status },
+    { label: "T4", value: latestReport.t4, status: latestReport.t4Status },
+    { label: "Free T3", value: latestReport.ft3, status: latestReport.ft3Status },
+    { label: "Free T4", value: latestReport.ft4, status: latestReport.ft4Status },
+    { label: "Anti-TPO", value: latestReport.antiTPO, status: latestReport.antiTPOStatus },
+  ].filter((m) => m.value !== null && m.value !== undefined);
+  if (items.length === 0) return "";
+  const statusClass = (s: string) => {
+    const k = (s || "").toLowerCase();
+    if (k === "normal") return "normal";
+    if (k === "elevated" || k === "high") return "elevated";
+    return "low";
+  };
+  return `
 <div class="section">
   <h2>Latest Lab Values</h2>
   <div class="lab-grid">
+    ${items.map((it) => `
     <div class="lab-item">
-      <div class="label">TSH</div>
-      <div class="value">${latestReport.tsh ?? "N/A"}</div>
-      <span class="status status-${latestReport.tshStatus === 'normal' ? 'normal' : latestReport.tshStatus === 'elevated' ? 'elevated' : 'low'}">${latestReport.tshStatus || "—"}</span>
-    </div>
-    <div class="lab-item">
-      <div class="label">T3</div>
-      <div class="value">${latestReport.t3 ?? "N/A"}</div>
-      <span class="status status-${latestReport.t3Status === 'normal' ? 'normal' : latestReport.t3Status === 'elevated' ? 'elevated' : 'low'}">${latestReport.t3Status || "—"}</span>
-    </div>
-    <div class="lab-item">
-      <div class="label">T4</div>
-      <div class="value">${latestReport.t4 ?? "N/A"}</div>
-      <span class="status status-${latestReport.t4Status === 'normal' ? 'normal' : latestReport.t4Status === 'elevated' ? 'elevated' : 'low'}">${latestReport.t4Status || "—"}</span>
-    </div>
+      <div class="label">${it.label}</div>
+      <div class="value">${it.value ?? "N/A"}</div>
+      <span class="status status-${statusClass(it.status)}">${it.status || "—"}</span>
+    </div>`).join("")}
   </div>
   <p style="font-size: 11px; color: #666;">Total reports analyzed: ${reports.length}</p>
-</div>
-` : ""}
+</div>`;
+})() : ""}
 
 <div class="section">
   <h2>AI Health Summary</h2>

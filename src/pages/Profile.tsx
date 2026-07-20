@@ -204,22 +204,31 @@ const Profile = () => {
         <Card className={cardClass}>
           <CardContent className="p-8">
             <h3 className={sectionTitle}><Activity className="w-6 h-6 text-pink-300" />Latest Smart Lab Summary</h3>
-            {labForProfile ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
-                  { label: "TSH", value: labForProfile.tsh, unit: "µIU/mL", status: labForProfile.tshStatus },
-                  { label: "T3", value: labForProfile.t3, unit: "ng/dL", status: labForProfile.t3Status },
-                  { label: "T4", value: labForProfile.t4, unit: "µg/dL", status: labForProfile.t4Status },
-                ].map((item) => (
-                  <div key={item.label} className="bg-white/5 border border-pink-400/20 rounded-xl p-4 text-center">
-                    <p className="text-white/60 text-sm">{item.label}</p>
-                    <p className="text-3xl font-bold text-pink-300 my-1">{item.value ?? "N/A"}</p>
-                    <p className="text-white/50 text-xs">{item.unit}</p>
-                    <Badge className={`mt-2 ${getStatusBadgeColor(item.status)}`}>{item.status || "unknown"}</Badge>
-                  </div>
-                ))}
-              </div>
-            ) : (
+            {labForProfile ? (() => {
+              const markers = [
+                { label: "TSH", value: labForProfile.tsh, unit: "µIU/mL", status: labForProfile.tshStatus },
+                { label: "T3", value: labForProfile.t3, unit: "ng/dL", status: labForProfile.t3Status },
+                { label: "T4", value: labForProfile.t4, unit: "µg/dL", status: labForProfile.t4Status },
+                { label: "Free T3", value: labForProfile.ft3, unit: "pg/mL", status: labForProfile.ft3Status },
+                { label: "Free T4", value: labForProfile.ft4, unit: "ng/dL", status: labForProfile.ft4Status },
+                { label: "Anti-TPO", value: labForProfile.antiTPO, unit: "IU/mL", status: labForProfile.antiTPOStatus },
+              ].filter((m) => m.value !== null && m.value !== undefined);
+              if (markers.length === 0) {
+                return <p className="text-white/50">No thyroid markers detected in this report.</p>;
+              }
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {markers.map((item) => (
+                    <div key={item.label} className="bg-white/5 border border-pink-400/20 rounded-xl p-4 text-center">
+                      <p className="text-white/60 text-sm">{item.label}</p>
+                      <p className="text-3xl font-bold text-pink-300 my-1">{item.value ?? "N/A"}</p>
+                      <p className="text-white/50 text-xs">{item.unit}</p>
+                      <Badge className={`mt-2 ${getStatusBadgeColor((item.status || "").toLowerCase())}`}>{item.status || "unknown"}</Badge>
+                    </div>
+                  ))}
+                </div>
+              );
+            })() : (
               <p className="text-white/50">No lab reports analyzed yet. Upload a report to see your summary.</p>
             )}
           </CardContent>

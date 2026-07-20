@@ -49,14 +49,20 @@ export interface LabReport {
   summary: string;
 
   // ⚠️ TEMPORARY compatibility fields — derived from the backend response only.
-  // These exist solely so the current UI keeps rendering during migration.
+  // Any of these may be null when the corresponding marker is missing.
   // TODO: Remove once the Results UI reads directly from the rich backend fields above.
   tsh: number | null;
   t3: number | null;
   t4: number | null;
+  ft3: number | null;
+  ft4: number | null;
+  antiTPO: number | null;
   tshStatus: string;
   t3Status: string;
   t4Status: string;
+  ft3Status: string;
+  ft4Status: string;
+  antiTPOStatus: string;
   interpretation: string;
 }
 

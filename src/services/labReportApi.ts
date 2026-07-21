@@ -49,7 +49,7 @@ export const analyzeReport = async (file: File): Promise<AnalyzeReportResponse> 
 
   let response: Response;
   try {
-    response = await fetch(`${getBaseUrl()}/api/analyze-report`, {
+    response = await fetch(`${getBaseUrl()}/analyze-report`, {
       method: "POST",
       body: formData,
     });

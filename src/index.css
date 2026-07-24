@@ -74,10 +74,26 @@ All colors MUST be HSL.
     --glow-butterfly: drop-shadow(0 8px 16px hsl(330 100% 75% / 0.5)) drop-shadow(0 4px 32px hsl(330 100% 75% / 0.3));
     --glow-button: 0 8px 24px hsl(280 80% 50% / 0.5), 0 4px 16px hsl(280 80% 50% / 0.3);
     --glow-button-hover: 0 12px 32px hsl(280 80% 50% / 0.7), 0 6px 24px hsl(280 80% 50% / 0.5);
-    
+
+    /* Semantic Health Status (HSL) — medical color coding */
+    --health-normal: 142 71% 45%;       /* #22C55E green */
+    --health-borderline: 48 96% 53%;    /* #FACC15 yellow */
+    --health-moderate: 25 95% 61%;      /* #FB923C orange */
+    --health-high: 0 84% 60%;           /* #EF4444 red */
+    --health-info: 217 91% 60%;         /* #3B82F6 blue */
+    --health-na: 215 20% 65%;           /* #94A3B8 gray */
+
+    /* Health glows — subtle outer glow for cards/badges */
+    --glow-normal: 0 0 24px hsl(var(--health-normal) / 0.35);
+    --glow-borderline: 0 0 24px hsl(var(--health-borderline) / 0.35);
+    --glow-moderate: 0 0 24px hsl(var(--health-moderate) / 0.4);
+    --glow-high: 0 0 28px hsl(var(--health-high) / 0.45);
+    --glow-info: 0 0 24px hsl(var(--health-info) / 0.35);
+
     /* Smooth Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-spring: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
 
   }
 

@@ -60,6 +60,15 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        health: {
+          normal: "hsl(var(--health-normal))",
+          borderline: "hsl(var(--health-borderline))",
+          moderate: "hsl(var(--health-moderate))",
+          high: "hsl(var(--health-high))",
+          info: "hsl(var(--health-info))",
+          na: "hsl(var(--health-na))",
+        },
+
       },
       backgroundImage: {
         'gradient-primary': 'var(--gradient-primary)',
@@ -75,7 +84,13 @@ export default {
         'butterfly': 'var(--shadow-butterfly)',
         'glow-button': 'var(--glow-button)',
         'glow-button-hover': 'var(--glow-button-hover)',
+        'glow-normal': 'var(--glow-normal)',
+        'glow-borderline': 'var(--glow-borderline)',
+        'glow-moderate': 'var(--glow-moderate)',
+        'glow-high': 'var(--glow-high)',
+        'glow-info': 'var(--glow-info)',
       },
+
       dropShadow: {
         'glow-butterfly': 'var(--glow-butterfly)',
       },
@@ -148,6 +163,14 @@ export default {
             transform: "translateX(10%) translateY(-5%)",
             opacity: "0.5"
           }
+        },
+        "pulse-soft": {
+          "0%, 100%": { opacity: "1", transform: "scale(1)" },
+          "50%": { opacity: "0.85", transform: "scale(1.04)" }
+        },
+        "pulse-warning": {
+          "0%, 100%": { boxShadow: "0 0 0 0 hsl(var(--health-high) / 0.5)" },
+          "50%": { boxShadow: "0 0 0 8px hsl(var(--health-high) / 0)" }
         }
       },
       animation: {
@@ -158,7 +181,10 @@ export default {
         "float-slow": "float-slow 20s ease-in-out infinite",
         "float-reverse": "float-reverse 25s ease-in-out infinite",
         "wave": "wave 15s ease-in-out infinite",
+        "pulse-soft": "pulse-soft 2.4s ease-in-out infinite",
+        "pulse-warning": "pulse-warning 2s ease-out infinite",
       },
+
     },
   },
   plugins: [require("tailwindcss-animate")],

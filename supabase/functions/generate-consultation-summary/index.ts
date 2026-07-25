@@ -33,6 +33,21 @@ serve(async (req) => {
       });
     }
 
+    // Server-side premium gate — free-tier users cannot call this endpoint.
+    const { data: sub } = await supabase
+      .from("user_subscriptions")
+      .select("tier, expires_at")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const isPremium = !!sub && sub.tier === "premium" &&
+      (!sub.expires_at || new Date(sub.expires_at) > new Date());
+    if (!isPremium) {
+      return new Response(JSON.stringify({ error: "TIA Plus subscription required" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const [labRes, healthRes] = await Promise.all([
       supabase
         .from("lab_reports")

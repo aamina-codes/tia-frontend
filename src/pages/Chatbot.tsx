@@ -456,14 +456,17 @@ const Chatbot = () => {
           >
             <div className="text-white/90 leading-relaxed whitespace-pre-wrap prose prose-invert prose-sm max-w-none">
               {message.content.split('\n').map((line, i) => {
-                // Handle bold text
-                const formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                // Safely render **bold** markdown as React elements (no HTML injection).
+                const parts = line.split(/(\*\*[^*]+\*\*)/g).map((part, j) => {
+                  if (/^\*\*[^*]+\*\*$/.test(part)) {
+                    return <strong key={j}>{part.slice(2, -2)}</strong>;
+                  }
+                  return <span key={j}>{part}</span>;
+                });
                 return (
-                  <p 
-                    key={i} 
-                    className="mb-1 last:mb-0"
-                    dangerouslySetInnerHTML={{ __html: formattedLine }}
-                  />
+                  <p key={i} className="mb-1 last:mb-0">
+                    {parts}
+                  </p>
                 );
               })}
             </div>

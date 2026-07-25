@@ -12,12 +12,60 @@ serve(async (req) => {
   }
 
   try {
-    const { fileUrl, fileName, fileType, userId } = await req.json();
-    
-    if (!fileUrl || !userId) {
+    // Require an authenticated user and derive user id from the verified JWT.
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
       return new Response(
-        JSON.stringify({ error: "File URL and user ID are required" }),
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnon = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnon, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    const userId = user.id;
+
+    const { fileUrl, fileName, fileType } = await req.json();
+
+    if (!fileUrl) {
+      return new Response(
+        JSON.stringify({ error: "File URL is required" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Only allow fetching files from this project's own Supabase storage,
+    // and only from a path owned by the authenticated user (blocks SSRF and
+    // access to other users' files).
+    let parsedFileUrl: URL;
+    try {
+      parsedFileUrl = new URL(fileUrl);
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid file URL" }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    const supabaseHost = new URL(supabaseUrl).host;
+    const allowedPrefix = `/storage/v1/object/`;
+    const expectedUserSegment = `/lab-reports/${userId}/`;
+    if (
+      parsedFileUrl.host !== supabaseHost ||
+      !parsedFileUrl.pathname.startsWith(allowedPrefix) ||
+      !parsedFileUrl.pathname.includes(expectedUserSegment)
+    ) {
+      return new Response(
+        JSON.stringify({ error: "File URL is not permitted" }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

@@ -250,40 +250,50 @@ const LabReportAnalysis = () => {
     return { Icon: Lightbulb, label: "Tip", tone: "muted" as Tone };
   };
 
-  // Circular progress ring for health score.
+  // Score band helper — keeps wording consistent wherever the score is shown.
+  const scoreBand = (score: number) => {
+    const clamped = Math.max(0, Math.min(100, Math.round(score)));
+    if (clamped >= 90)
+      return { clamped, label: "Excellent", tone: "green" as Tone, note: "Overall thyroid health appears excellent." };
+    if (clamped >= 70)
+      return { clamped, label: "Good", tone: "green" as Tone, note: "Overall thyroid health appears stable." };
+    if (clamped >= 50)
+      return { clamped, label: "Moderate", tone: "orange" as Tone, note: "Some markers need closer monitoring." };
+    return { clamped, label: "Poor", tone: "red" as Tone, note: "Several markers need medical attention." };
+  };
+
+  // Circular progress ring for health score (light surface).
   const HealthRing = ({ score }: { score: number }) => {
-    const clamped = Math.max(0, Math.min(100, score));
-    const label = clamped >= 90 ? "Excellent" : clamped >= 70 ? "Good" : clamped >= 50 ? "Fair" : "Needs Care";
-    const ringTone: Tone = clamped >= 90 ? "green" : clamped >= 70 ? "yellow" : "red";
-    const stroke =
-      ringTone === "green" ? "#34d399" : ringTone === "yellow" ? "#facc15" : "#f87171";
-    const R = 52;
+    const { clamped, label, tone } = scoreBand(score);
+    const stroke = toneStroke[tone];
+    const R = 58;
     const C = 2 * Math.PI * R;
     const offset = C - (clamped / 100) * C;
     return (
-      <div className="relative w-32 h-32 flex items-center justify-center">
-        <svg width="128" height="128" className="-rotate-90">
-          <circle cx="64" cy="64" r={R} stroke="rgba(255,255,255,0.1)" strokeWidth="10" fill="none" />
+      <div className="relative w-[148px] h-[148px] flex items-center justify-center">
+        <svg width="148" height="148" viewBox="0 0 148 148" className="-rotate-90">
+          <circle cx="74" cy="74" r={R} stroke="#e2e8f0" strokeWidth="12" fill="none" />
           <circle
-            cx="64"
-            cy="64"
+            cx="74"
+            cy="74"
             r={R}
             stroke={stroke}
-            strokeWidth="10"
+            strokeWidth="12"
             fill="none"
             strokeLinecap="round"
             strokeDasharray={C}
             strokeDashoffset={offset}
-            style={{ transition: "stroke-dashoffset 1s ease-out", filter: `drop-shadow(0 0 10px ${stroke})` }}
+            style={{ transition: "stroke-dashoffset 1.1s cubic-bezier(0.22,1,0.36,1)" }}
           />
         </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={`text-3xl font-bold ${toneText[ringTone]}`}>{clamped}</span>
-          <span className="text-[10px] uppercase tracking-widest text-white/60">{label}</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
+          <span className="text-[44px] font-bold tracking-tight text-slate-900">{clamped}</span>
+          <span className="mt-1 text-[11px] font-medium text-slate-500">out of 100</span>
         </div>
       </div>
     );
   };
+
 
   const InfoRow = ({ icon: Icon, label, value }: { icon: any; label: string; value: string }) => (
     <div className="flex items-center gap-3 py-1">

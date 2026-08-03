@@ -546,14 +546,24 @@ const LabReportAnalysis = () => {
             const healthScore: number | undefined =
               displayReport.risk?.score ?? displayReport.risk?.health_score;
 
-            const overallStatus =
-              abnormalTests.length === 0
-                ? "Stable"
-                : abnormalTests.some((m) => m.tone === "red")
-                ? "Critical"
-                : "Mild Imbalance";
+            // Dynamic overall status: Stable → Borderline → Needs Monitoring → Critical
             const overallTone: Tone =
-              overallStatus === "Stable" ? "green" : overallStatus === "Critical" ? "red" : "yellow";
+              abnormalTests.length === 0
+                ? "green"
+                : abnormalTests.some((m) => m.tone === "red")
+                ? "red"
+                : abnormalTests.some((m) => m.tone === "orange")
+                ? "orange"
+                : "yellow";
+            const overallStatus =
+              overallTone === "green"
+                ? "Stable"
+                : overallTone === "red"
+                ? "Critical"
+                : overallTone === "orange"
+                ? "Needs Monitoring"
+                : "Borderline";
+
 
             const interpretation: string =
               (analysis as any)?.interpretation ??

@@ -23,6 +23,10 @@ import {
   RefreshCw,
   FileUp,
   ShieldCheck,
+  ShieldAlert,
+  HeartPulse,
+  Brain,
+  HelpCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";

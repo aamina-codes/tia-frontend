@@ -546,7 +546,15 @@ const LabReportAnalysis = () => {
             const abnormalTests = availableMarkers.filter((m) => m.tone !== "green" && m.tone !== "muted");
 
             const riskLevel: string = displayReport.risk?.level ?? displayReport.risk?.risk ?? "Unknown";
-            const riskTone = toneFor(riskLevel);
+            // Risk level uses the standard medical colour system:
+            // low → green, moderate → amber, high → red, unknown → gray.
+            const riskTone: Tone = (() => {
+              const r = String(riskLevel).toLowerCase();
+              if (/high|severe|critical/.test(r)) return "red";
+              if (/moderate|medium|borderline/.test(r)) return "yellow";
+              if (/low|minimal|none/.test(r)) return "green";
+              return "muted";
+            })();
             const healthScore: number | undefined =
               displayReport.risk?.score ?? displayReport.risk?.health_score;
 

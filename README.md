@@ -1,3 +1,10 @@
+## Related Repository
+
+🧠 Backend
+
+https://github.com/aamina-codes/tia-backend
+
+
 # 🎨 TIA Frontend
 
 > Beautiful, responsive frontend for the Thyroid Intelligent Assistant (TIA)

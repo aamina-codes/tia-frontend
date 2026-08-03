@@ -128,6 +128,51 @@ const LabReportAnalysis = () => {
     muted: "⚪",
   };
 
+  // ── Light-surface variants ────────────────────────────────────────────────
+  // Used inside the AI Clinical Analysis report card, which sits on a light
+  // paper-like surface so body copy stays high-contrast and accessible.
+  const toneTextOnLight: Record<Tone, string> = {
+    green: "text-emerald-700",
+    yellow: "text-amber-700",
+    orange: "text-orange-700",
+    red: "text-red-700",
+    blue: "text-sky-700",
+    muted: "text-slate-500",
+  };
+
+  const toneBadgeOnLight: Record<Tone, string> = {
+    green: "bg-emerald-50 text-emerald-800 border border-emerald-300",
+    yellow: "bg-amber-50 text-amber-800 border border-amber-300",
+    orange: "bg-orange-50 text-orange-800 border border-orange-300",
+    red: "bg-red-50 text-red-800 border border-red-300",
+    blue: "bg-sky-50 text-sky-800 border border-sky-300",
+    muted: "bg-slate-100 text-slate-700 border border-slate-300",
+  };
+
+  const toneDotOnLight: Record<Tone, string> = {
+    green: "bg-emerald-500",
+    yellow: "bg-amber-500",
+    orange: "bg-orange-500",
+    red: "bg-red-500",
+    blue: "bg-sky-500",
+    muted: "bg-slate-400",
+  };
+
+  const toneStroke: Record<Tone, string> = {
+    green: "#059669",
+    yellow: "#d97706",
+    orange: "#ea580c",
+    red: "#dc2626",
+    blue: "#0284c7",
+    muted: "#94a3b8",
+  };
+
+  // Small colored status dot — replaces emoji for a cleaner clinical look.
+  const StatusDot = ({ tone }: { tone: Tone }) => (
+    <span className={`w-2 h-2 rounded-full shrink-0 ${toneDotOnLight[tone]}`} />
+  );
+
+
   // Extract a display value from an analysis entry or raw thyroid map.
   const readValue = (entry: any, raw: any): string | number => {
     const v = entry?.value ?? entry?.level ?? entry?.result ?? raw;

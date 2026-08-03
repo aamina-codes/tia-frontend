@@ -23,6 +23,10 @@ import {
   RefreshCw,
   FileUp,
   ShieldCheck,
+  ShieldAlert,
+  HeartPulse,
+  Brain,
+  HelpCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -128,6 +132,51 @@ const LabReportAnalysis = () => {
     muted: "⚪",
   };
 
+  // ── Light-surface variants ────────────────────────────────────────────────
+  // Used inside the AI Clinical Analysis report card, which sits on a light
+  // paper-like surface so body copy stays high-contrast and accessible.
+  const toneTextOnLight: Record<Tone, string> = {
+    green: "text-emerald-700",
+    yellow: "text-amber-700",
+    orange: "text-orange-700",
+    red: "text-red-700",
+    blue: "text-sky-700",
+    muted: "text-slate-500",
+  };
+
+  const toneBadgeOnLight: Record<Tone, string> = {
+    green: "bg-emerald-50 text-emerald-800 border border-emerald-300",
+    yellow: "bg-amber-50 text-amber-800 border border-amber-300",
+    orange: "bg-orange-50 text-orange-800 border border-orange-300",
+    red: "bg-red-50 text-red-800 border border-red-300",
+    blue: "bg-sky-50 text-sky-800 border border-sky-300",
+    muted: "bg-slate-100 text-slate-700 border border-slate-300",
+  };
+
+  const toneDotOnLight: Record<Tone, string> = {
+    green: "bg-emerald-500",
+    yellow: "bg-amber-500",
+    orange: "bg-orange-500",
+    red: "bg-red-500",
+    blue: "bg-sky-500",
+    muted: "bg-slate-400",
+  };
+
+  const toneStroke: Record<Tone, string> = {
+    green: "#059669",
+    yellow: "#d97706",
+    orange: "#ea580c",
+    red: "#dc2626",
+    blue: "#0284c7",
+    muted: "#94a3b8",
+  };
+
+  // Small colored status dot — replaces emoji for a cleaner clinical look.
+  const StatusDot = ({ tone }: { tone: Tone }) => (
+    <span className={`w-2 h-2 rounded-full shrink-0 ${toneDotOnLight[tone]}`} />
+  );
+
+
   // Extract a display value from an analysis entry or raw thyroid map.
   const readValue = (entry: any, raw: any): string | number => {
     const v = entry?.value ?? entry?.level ?? entry?.result ?? raw;
@@ -205,40 +254,50 @@ const LabReportAnalysis = () => {
     return { Icon: Lightbulb, label: "Tip", tone: "muted" as Tone };
   };
 
-  // Circular progress ring for health score.
+  // Score band helper — keeps wording consistent wherever the score is shown.
+  const scoreBand = (score: number) => {
+    const clamped = Math.max(0, Math.min(100, Math.round(score)));
+    if (clamped >= 90)
+      return { clamped, label: "Excellent", tone: "green" as Tone, note: "Overall thyroid health appears excellent." };
+    if (clamped >= 70)
+      return { clamped, label: "Good", tone: "green" as Tone, note: "Overall thyroid health appears stable." };
+    if (clamped >= 50)
+      return { clamped, label: "Moderate", tone: "orange" as Tone, note: "Some markers need closer monitoring." };
+    return { clamped, label: "Poor", tone: "red" as Tone, note: "Several markers need medical attention." };
+  };
+
+  // Circular progress ring for health score (light surface).
   const HealthRing = ({ score }: { score: number }) => {
-    const clamped = Math.max(0, Math.min(100, score));
-    const label = clamped >= 90 ? "Excellent" : clamped >= 70 ? "Good" : clamped >= 50 ? "Fair" : "Needs Care";
-    const ringTone: Tone = clamped >= 90 ? "green" : clamped >= 70 ? "yellow" : "red";
-    const stroke =
-      ringTone === "green" ? "#34d399" : ringTone === "yellow" ? "#facc15" : "#f87171";
-    const R = 52;
+    const { clamped, label, tone } = scoreBand(score);
+    const stroke = toneStroke[tone];
+    const R = 58;
     const C = 2 * Math.PI * R;
     const offset = C - (clamped / 100) * C;
     return (
-      <div className="relative w-32 h-32 flex items-center justify-center">
-        <svg width="128" height="128" className="-rotate-90">
-          <circle cx="64" cy="64" r={R} stroke="rgba(255,255,255,0.1)" strokeWidth="10" fill="none" />
+      <div className="relative w-[148px] h-[148px] flex items-center justify-center">
+        <svg width="148" height="148" viewBox="0 0 148 148" className="-rotate-90">
+          <circle cx="74" cy="74" r={R} stroke="#e2e8f0" strokeWidth="12" fill="none" />
           <circle
-            cx="64"
-            cy="64"
+            cx="74"
+            cy="74"
             r={R}
             stroke={stroke}
-            strokeWidth="10"
+            strokeWidth="12"
             fill="none"
             strokeLinecap="round"
             strokeDasharray={C}
             strokeDashoffset={offset}
-            style={{ transition: "stroke-dashoffset 1s ease-out", filter: `drop-shadow(0 0 10px ${stroke})` }}
+            style={{ transition: "stroke-dashoffset 1.1s cubic-bezier(0.22,1,0.36,1)" }}
           />
         </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={`text-3xl font-bold ${toneText[ringTone]}`}>{clamped}</span>
-          <span className="text-[10px] uppercase tracking-widest text-white/60">{label}</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
+          <span className="text-[44px] font-bold tracking-tight text-slate-900">{clamped}</span>
+          <span className="mt-1 text-[11px] font-medium text-slate-500">out of 100</span>
         </div>
       </div>
     );
   };
+
 
   const InfoRow = ({ icon: Icon, label, value }: { icon: any; label: string; value: string }) => (
     <div className="flex items-center gap-3 py-1">
@@ -487,18 +546,36 @@ const LabReportAnalysis = () => {
             const abnormalTests = availableMarkers.filter((m) => m.tone !== "green" && m.tone !== "muted");
 
             const riskLevel: string = displayReport.risk?.level ?? displayReport.risk?.risk ?? "Unknown";
-            const riskTone = toneFor(riskLevel);
+            // Risk level uses the standard medical colour system:
+            // low → green, moderate → amber, high → red, unknown → gray.
+            const riskTone: Tone = (() => {
+              const r = String(riskLevel).toLowerCase();
+              if (/high|severe|critical/.test(r)) return "red";
+              if (/moderate|medium|borderline/.test(r)) return "yellow";
+              if (/low|minimal|none/.test(r)) return "green";
+              return "muted";
+            })();
             const healthScore: number | undefined =
               displayReport.risk?.score ?? displayReport.risk?.health_score;
 
-            const overallStatus =
-              abnormalTests.length === 0
-                ? "Stable"
-                : abnormalTests.some((m) => m.tone === "red")
-                ? "Critical"
-                : "Mild Imbalance";
+            // Dynamic overall status: Stable → Borderline → Needs Monitoring → Critical
             const overallTone: Tone =
-              overallStatus === "Stable" ? "green" : overallStatus === "Critical" ? "red" : "yellow";
+              abnormalTests.length === 0
+                ? "green"
+                : abnormalTests.some((m) => m.tone === "red")
+                ? "red"
+                : abnormalTests.some((m) => m.tone === "orange")
+                ? "orange"
+                : "yellow";
+            const overallStatus =
+              overallTone === "green"
+                ? "Stable"
+                : overallTone === "red"
+                ? "Critical"
+                : overallTone === "orange"
+                ? "Needs Monitoring"
+                : "Borderline";
+
 
             const interpretation: string =
               (analysis as any)?.interpretation ??
@@ -608,63 +685,135 @@ const LabReportAnalysis = () => {
                     </div>
                   </div>
 
-                  {/* AI Clinical Analysis */}
-                  <Card className="bg-gradient-to-br from-purple-600/15 via-purple-500/10 to-transparent backdrop-blur-xl border border-purple-300/30 rounded-3xl overflow-hidden">
-                    <div className="bg-gradient-to-r from-purple-600/40 to-pink-500/30 px-6 py-4 border-b border-white/10 flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-white/10">
+                  {/* AI Clinical Analysis — light "report paper" surface for readability */}
+                  <Card className="bg-white border border-purple-200/60 rounded-3xl overflow-hidden shadow-[0_18px_50px_-18px_rgba(30,0,61,0.55)] animate-fade-in">
+                    {/* Gradient header (kept) */}
+                    <div className="bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 px-6 py-5 flex flex-wrap items-center gap-3">
+                      <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm">
                         <Sparkles className="w-5 h-5 text-white" />
                       </div>
                       <h3 className="text-lg md:text-xl font-bold text-white">AI Clinical Analysis</h3>
+                      <span className="ml-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 border border-white/30 text-white text-[11px] font-semibold backdrop-blur-sm">
+                        <Sparkles className="w-3 h-3" />
+                        Generated by TIA AI
+                      </span>
                     </div>
-                    <CardContent className="p-6 md:p-8 space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                        {/* Health score ring */}
-                        <div className="flex flex-col items-center justify-center md:border-r md:border-white/10 md:pr-6">
+
+                    <CardContent className="p-6 md:p-8">
+                      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,300px)_1fr] gap-8 lg:gap-10">
+                        {/* ── Left: Health Score ─────────────────────────── */}
+                        <div className="flex flex-col items-center text-center lg:border-r lg:border-slate-200 lg:pr-10">
+                          <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 mb-4">
+                            <HeartPulse className="w-3.5 h-3.5 text-pink-500" />
+                            Health Score
+                          </p>
                           {healthScore !== undefined && healthScore !== null ? (
                             <>
                               <HealthRing score={Number(healthScore)} />
-                              <p className="text-white/60 text-xs mt-2 uppercase tracking-wider">Health Score</p>
+                              <span
+                                className={`mt-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold transition-transform duration-200 hover:scale-[1.03] ${
+                                  toneBadgeOnLight[scoreBand(Number(healthScore)).tone]
+                                }`}
+                              >
+                                <StatusDot tone={scoreBand(Number(healthScore)).tone} />
+                                {scoreBand(Number(healthScore)).label}
+                              </span>
+                              <p className="mt-3 text-sm text-slate-600 leading-relaxed max-w-[240px]">
+                                {scoreBand(Number(healthScore)).note}
+                              </p>
                             </>
                           ) : (
-                            <div className="text-white/50 text-sm text-center">Score not available</div>
+                            <div className="flex flex-col items-center gap-2 py-8">
+                              <span className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center">
+                                <Activity className="w-6 h-6 text-slate-400" />
+                              </span>
+                              <p className="text-sm text-slate-500">Score not available</p>
+                            </div>
                           )}
                         </div>
 
-                        {/* Overall status + risk */}
-                        <div className="md:col-span-2 space-y-4">
-                          <div>
-                            <p className="text-white/50 text-[11px] uppercase tracking-wider mb-1.5">Overall Status</p>
-                            <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold ${toneBadge[overallTone]}`}>
-                              {toneDot[overallTone]} {overallStatus}
+                        {/* ── Right: Status → Risk → Interpretation ──────── */}
+                        <div className="divide-y divide-slate-200">
+                          {/* Overall Status */}
+                          <div className="pb-5">
+                            <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2.5">
+                              <Activity className="w-4 h-4 text-purple-600" />
+                              Overall Status
+                            </h4>
+                            <span
+                              className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold transition-transform duration-200 hover:scale-[1.03] ${toneBadgeOnLight[overallTone]}`}
+                            >
+                              <StatusDot tone={overallTone} />
+                              {overallStatus}
                             </span>
                           </div>
-                          <div>
-                            <p className="text-white/50 text-[11px] uppercase tracking-wider mb-1.5">Risk Level</p>
-                            <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold ${toneBadge[riskTone]}`}>
-                              <ShieldCheck className="w-3.5 h-3.5" />
-                              {riskLevel} Risk
+
+                          {/* Risk Level */}
+                          <div className="py-5">
+                            <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2.5">
+                              <ShieldCheck className="w-4 h-4 text-purple-600" />
+                              Risk Level
+                            </h4>
+                            <span
+                              className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold transition-transform duration-200 hover:scale-[1.03] ${toneBadgeOnLight[riskTone]}`}
+                            >
+                              {riskTone === "red" ? (
+                                <ShieldAlert className="w-4 h-4" />
+                              ) : riskTone === "muted" ? (
+                                <HelpCircle className="w-4 h-4" />
+                              ) : (
+                                <ShieldCheck className="w-4 h-4" />
+                              )}
+                              {/(risk)$/i.test(String(riskLevel).trim())
+                                ? String(riskLevel)
+                                : `${riskLevel} Risk`}
                             </span>
                           </div>
+
+                          {/* AI Interpretation */}
                           {interpretation && (
-                            <div>
-                              <p className="text-white/50 text-[11px] uppercase tracking-wider mb-1.5">Interpretation</p>
-                              <p className="text-white/85 text-sm leading-relaxed">{interpretation}</p>
+                            <div className="pt-5">
+                              <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2.5">
+                                <Brain className="w-4 h-4 text-purple-600" />
+                                AI Interpretation
+                              </h4>
+                              <div className="rounded-2xl bg-purple-50/70 border border-purple-100 p-4 md:p-5">
+                                <p className="text-[15px] leading-7 text-slate-700">{interpretation}</p>
+                              </div>
                             </div>
                           )}
                         </div>
                       </div>
 
-                      {/* Abnormal tests */}
-                      <div className="pt-4 border-t border-white/10">
-                        <p className="text-white/50 text-[11px] uppercase tracking-wider mb-2">Abnormal Tests</p>
+                      {/* ── Abnormal Markers ─────────────────────────────── */}
+                      <div className="mt-8 pt-6 border-t border-slate-200">
+                        <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3">
+                          <AlertCircle className="w-4 h-4 text-purple-600" />
+                          Abnormal Markers
+                        </h4>
                         {abnormalTests.length === 0 ? (
-                          <p className="text-emerald-200 text-sm">No abnormal thyroid markers detected.</p>
+                          <div className="inline-flex items-center gap-2 rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-3">
+                            <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <p className="text-sm font-medium text-emerald-800">
+                              No abnormal thyroid markers detected.
+                            </p>
+                          </div>
                         ) : (
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-2.5">
                             {abnormalTests.map((m) => (
-                              <span key={m.key} className={`px-3 py-1 rounded-full text-xs font-medium ${toneBadge[m.tone]}`}>
-                                {toneDot[m.tone]} {m.label}: {m.status}
-                                {m.severity ? ` (${m.severity})` : ""}
+                              <span
+                                key={m.key}
+                                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl text-sm font-semibold transition-transform duration-200 hover:scale-[1.03] ${toneBadgeOnLight[m.tone]}`}
+                              >
+                                <StatusDot tone={m.tone} />
+                                <span>
+                                  {m.label} — {m.status}
+                                </span>
+                                {m.severity && (
+                                  <span className={`text-xs font-normal ${toneTextOnLight[m.tone]}`}>
+                                    ({m.severity})
+                                  </span>
+                                )}
                               </span>
                             ))}
                           </div>
@@ -672,6 +821,7 @@ const LabReportAnalysis = () => {
                       </div>
                     </CardContent>
                   </Card>
+
 
                   {/* Possible Conditions */}
                   {conditions.length > 0 && (

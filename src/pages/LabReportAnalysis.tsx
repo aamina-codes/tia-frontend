@@ -917,34 +917,68 @@ const LabReportAnalysis = () => {
                     </div>
 
                     <CardContent className="p-6 md:p-8">
-                      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,300px)_1fr] gap-8 lg:gap-10">
+                      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,320px)_1fr] gap-8 lg:gap-12">
                         {/* ── Left: Health Score ─────────────────────────── */}
-                        <div className="flex flex-col items-center text-center lg:border-r lg:border-slate-200 lg:pr-10">
-                          <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 mb-4">
+                        <div className="flex flex-col items-center text-center lg:border-r lg:border-slate-200 lg:pr-12">
+                          <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 mb-5">
                             <HeartPulse className="w-3.5 h-3.5 text-pink-500" />
-                            Health Score
+                            AI Health Score
                           </p>
                           {healthScore !== undefined && healthScore !== null ? (
                             <>
                               <HealthRing score={Number(healthScore)} />
+
+                              {/* Clinical status */}
                               <span
-                                className={`mt-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold transition-transform duration-200 hover:scale-[1.03] ${
+                                className={`mt-5 inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold animate-fade-in transition-transform duration-200 hover:scale-[1.03] ${
                                   toneBadgeOnLight[scoreBand(Number(healthScore)).tone]
                                 }`}
                               >
                                 <StatusDot tone={scoreBand(Number(healthScore)).tone} />
                                 {scoreBand(Number(healthScore)).label}
                               </span>
-                              <p className="mt-3 text-sm text-slate-600 leading-relaxed max-w-[240px]">
+
+                              {/* Change vs previous report */}
+                              <div className="mt-4 w-full max-w-[250px] rounded-2xl bg-slate-50 border border-slate-200 px-4 py-3">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                                  vs previous report
+                                </p>
+                                {scoreDelta === undefined ? (
+                                  <p className="mt-1 text-sm text-slate-500">
+                                    No earlier report to compare yet
+                                  </p>
+                                ) : (
+                                  <p
+                                    className={`mt-1 text-sm font-semibold flex items-center justify-center gap-1.5 ${
+                                      scoreDelta > 0
+                                        ? "text-emerald-700"
+                                        : scoreDelta < 0
+                                        ? "text-red-700"
+                                        : "text-slate-600"
+                                    }`}
+                                  >
+                                    <span aria-hidden="true">
+                                      {scoreDelta > 0 ? "▲" : scoreDelta < 0 ? "▼" : "•"}
+                                    </span>
+                                    {scoreDelta === 0
+                                      ? "No change"
+                                      : `${scoreDelta > 0 ? "+" : ""}${scoreDelta} point${
+                                          Math.abs(scoreDelta) === 1 ? "" : "s"
+                                        }`}
+                                  </p>
+                                )}
+                              </div>
+
+                              <p className="mt-4 text-sm text-slate-600 leading-relaxed max-w-[250px]">
                                 {scoreBand(Number(healthScore)).note}
                               </p>
                             </>
                           ) : (
-                            <div className="flex flex-col items-center gap-2 py-8">
+                            <div className="flex flex-col items-center gap-2 py-10">
                               <span className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center">
                                 <Activity className="w-6 h-6 text-slate-400" />
                               </span>
-                              <p className="text-sm text-slate-500">Score not available</p>
+                              <p className="text-sm text-slate-500">Score not available for this report</p>
                             </div>
                           )}
                         </div>
@@ -952,13 +986,13 @@ const LabReportAnalysis = () => {
                         {/* ── Right: Status → Risk → Interpretation ──────── */}
                         <div className="divide-y divide-slate-200">
                           {/* Overall Status */}
-                          <div className="pb-5">
-                            <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2.5">
+                          <div className="pb-6">
+                            <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3">
                               <Activity className="w-4 h-4 text-purple-600" />
                               Overall Status
                             </h4>
                             <span
-                              className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold transition-transform duration-200 hover:scale-[1.03] ${toneBadgeOnLight[overallTone]}`}
+                              className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold animate-fade-in transition-transform duration-200 hover:scale-[1.03] ${toneBadgeOnLight[overallTone]}`}
                             >
                               <StatusDot tone={overallTone} />
                               {overallStatus}
@@ -966,41 +1000,43 @@ const LabReportAnalysis = () => {
                           </div>
 
                           {/* Risk Level */}
-                          <div className="py-5">
-                            <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2.5">
+                          <div className="py-6">
+                            <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3">
                               <ShieldCheck className="w-4 h-4 text-purple-600" />
                               Risk Level
                             </h4>
                             <span
-                              className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold transition-transform duration-200 hover:scale-[1.03] ${toneBadgeOnLight[riskTone]}`}
+                              className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold animate-fade-in transition-transform duration-200 hover:scale-[1.03] ${toneBadgeOnLight[riskTone]}`}
                             >
                               {riskTone === "red" ? (
                                 <ShieldAlert className="w-4 h-4" />
-                              ) : riskTone === "muted" ? (
+                              ) : riskTone === "orange" ? (
                                 <HelpCircle className="w-4 h-4" />
                               ) : (
                                 <ShieldCheck className="w-4 h-4" />
                               )}
-                              {/(risk)$/i.test(String(riskLevel).trim())
-                                ? String(riskLevel)
-                                : `${riskLevel} Risk`}
+                              {riskLabel}
                             </span>
+                            {!hasUsableRisk && (
+                              <p className="mt-2.5 text-xs text-slate-500 leading-relaxed max-w-md">
+                                Estimated by TIA from your marker results — always confirm with your doctor.
+                              </p>
+                            )}
                           </div>
 
                           {/* AI Interpretation */}
-                          {interpretation && (
-                            <div className="pt-5">
-                              <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2.5">
+                          {interpretationParagraphs.length > 0 && (
+                            <div className="pt-6">
+                              <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3">
                                 <Brain className="w-4 h-4 text-purple-600" />
                                 AI Interpretation
                               </h4>
-                              <div className="rounded-2xl bg-purple-50/70 border border-purple-100 p-4 md:p-5">
-                                <p className="text-[15px] leading-7 text-slate-700">{interpretation}</p>
-                              </div>
+                              <AiInterpretation paragraphs={interpretationParagraphs} />
                             </div>
                           )}
                         </div>
                       </div>
+
 
                       {/* ── Abnormal Markers ─────────────────────────────── */}
                       <div className="mt-8 pt-6 border-t border-slate-200">

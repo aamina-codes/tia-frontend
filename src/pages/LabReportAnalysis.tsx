@@ -49,6 +49,293 @@ const LOADING_MESSAGES = [
   "Preparing recommendations...",
 ];
 
+/* ══════════════════════════════════════════════════════════════════════════
+   Colour system — Green: Normal · Yellow: Borderline · Red: High · Blue: Low
+   ══════════════════════════════════════════════════════════════════════════ */
+
+// Normalize backend status/severity to a colour tone.
+const toneFor = (status?: string, severity?: string): Tone => {
+  const s = (status || "").toLowerCase().trim();
+  // Direction first — "Low" must read blue even when severity says mild/severe.
+  if (/^(very )?low$/.test(s) || s === "below range" || s === "deficient") return "blue";
+
+  const sev = (severity || "").toLowerCase();
+  if (sev === "severe" || sev === "critical") return "red";
+  if (sev === "moderate") return "orange";
+  if (sev === "mild" || sev === "borderline") return "yellow";
+  if (sev === "normal") return "green";
+
+  if (s === "normal" || s === "optimal" || s === "within range") return "green";
+  if (s === "borderline" || s === "slightly low") return "yellow";
+  if (s === "slightly high" || s === "mildly high") return "orange";
+  if (s === "high" || s === "very high" || s === "elevated") return "red";
+  return "muted";
+};
+
+// Tone → styling maps for the dark purple surface.
+const toneCard: Record<Tone, string> = {
+  green: "bg-emerald-500/10 border-emerald-400/40 shadow-[0_10px_34px_-14px_rgba(16,185,129,0.55)]",
+  yellow: "bg-yellow-500/10 border-yellow-400/40 shadow-[0_10px_34px_-14px_rgba(234,179,8,0.5)]",
+  orange: "bg-orange-500/10 border-orange-400/40 shadow-[0_10px_34px_-14px_rgba(251,146,60,0.55)]",
+  red: "bg-red-500/10 border-red-400/40 shadow-[0_10px_34px_-14px_rgba(239,68,68,0.6)]",
+  blue: "bg-sky-500/10 border-sky-400/40 shadow-[0_10px_34px_-14px_rgba(56,189,248,0.5)]",
+  muted: "bg-white/[0.04] border-white/12",
+};
+
+const toneText: Record<Tone, string> = {
+  green: "text-emerald-300",
+  yellow: "text-yellow-200",
+  orange: "text-orange-300",
+  red: "text-red-300",
+  blue: "text-sky-300",
+  muted: "text-white/60",
+};
+
+const toneBadge: Record<Tone, string> = {
+  green: "bg-emerald-500/20 text-emerald-100 border border-emerald-400/50",
+  yellow: "bg-yellow-500/20 text-yellow-50 border border-yellow-400/50",
+  orange: "bg-orange-500/20 text-orange-50 border border-orange-400/50",
+  red: "bg-red-500/20 text-red-50 border border-red-400/50",
+  blue: "bg-sky-500/20 text-sky-50 border border-sky-400/50",
+  muted: "bg-white/10 text-white/70 border border-white/20",
+};
+
+const toneDotDark: Record<Tone, string> = {
+  green: "bg-emerald-400",
+  yellow: "bg-yellow-300",
+  orange: "bg-orange-400",
+  red: "bg-red-400",
+  blue: "bg-sky-400",
+  muted: "bg-white/40",
+};
+
+// ── Light-surface variants (AI Clinical Analysis "report paper" card) ────────
+const toneTextOnLight: Record<Tone, string> = {
+  green: "text-emerald-700",
+  yellow: "text-amber-700",
+  orange: "text-orange-700",
+  red: "text-red-700",
+  blue: "text-sky-700",
+  muted: "text-slate-500",
+};
+
+const toneBadgeOnLight: Record<Tone, string> = {
+  green: "bg-emerald-50 text-emerald-800 border border-emerald-300",
+  yellow: "bg-amber-50 text-amber-800 border border-amber-300",
+  orange: "bg-orange-50 text-orange-800 border border-orange-300",
+  red: "bg-red-50 text-red-800 border border-red-300",
+  blue: "bg-sky-50 text-sky-800 border border-sky-300",
+  muted: "bg-slate-100 text-slate-700 border border-slate-300",
+};
+
+const toneDotOnLight: Record<Tone, string> = {
+  green: "bg-emerald-500",
+  yellow: "bg-amber-500",
+  orange: "bg-orange-500",
+  red: "bg-red-500",
+  blue: "bg-sky-500",
+  muted: "bg-slate-400",
+};
+
+const toneStroke: Record<Tone, string> = {
+  green: "#059669",
+  yellow: "#d97706",
+  orange: "#ea580c",
+  red: "#dc2626",
+  blue: "#0284c7",
+  muted: "#94a3b8",
+};
+
+const StatusDot = ({ tone }: { tone: Tone }) => (
+  <span className={`w-2 h-2 rounded-full shrink-0 ${toneDotOnLight[tone]}`} />
+);
+
+/* ── Micro-interaction helpers ─────────────────────────────────────────────
+   Subtle only: a score that counts up, text that types itself, badges and
+   cards that ease into view. No bounce, no flash.                          */
+
+// Animates a number 0 → target on an ease-out curve.
+const useCountUp = (target: number, duration = 1300) => {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (!Number.isFinite(target)) return;
+    let frame = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      setValue(target * (1 - Math.pow(1 - t, 3)));
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [target, duration]);
+  return value;
+};
+
+// Reveals text progressively for the AI typing effect.
+const useTypewriter = (text: string, charsPerTick = 4, speed = 18) => {
+  const [shown, setShown] = useState("");
+  useEffect(() => {
+    setShown("");
+    if (!text) return;
+    let i = 0;
+    const id = setInterval(() => {
+      i += charsPerTick;
+      setShown(text.slice(0, i));
+      if (i >= text.length) clearInterval(id);
+    }, speed);
+    return () => clearInterval(id);
+  }, [text, charsPerTick, speed]);
+  return shown;
+};
+
+type Trend = "up" | "down" | "stable" | null;
+
+const TREND_META = {
+  up: { symbol: "▲", label: "Increased", cls: "text-orange-200 bg-orange-500/15 border-orange-400/35" },
+  down: { symbol: "▼", label: "Decreased", cls: "text-sky-200 bg-sky-500/15 border-sky-400/35" },
+  stable: { symbol: "•", label: "Stable", cls: "text-white/75 bg-white/10 border-white/20" },
+} as const;
+
+const TrendPill = ({ trend, delta }: { trend: Trend; delta?: number }) => {
+  if (!trend) return null;
+  const t = TREND_META[trend];
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-[3px] rounded-full border text-[10px] font-semibold animate-fade-in ${t.cls}`}
+    >
+      <span aria-hidden="true">{t.symbol}</span>
+      {t.label}
+      {delta !== undefined && delta !== 0 && (
+        <span className="font-normal opacity-75">
+          {delta > 0 ? "+" : ""}
+          {Number(delta.toFixed(2))}
+        </span>
+      )}
+    </span>
+  );
+};
+
+// Score band helper — keeps wording consistent wherever the score is shown.
+const scoreBand = (score: number) => {
+  const clamped = Math.max(0, Math.min(100, Math.round(score)));
+  if (clamped >= 90)
+    return { clamped, label: "Excellent", tone: "green" as Tone, note: "Your thyroid profile looks excellent." };
+  if (clamped >= 70)
+    return { clamped, label: "Good", tone: "green" as Tone, note: "Your thyroid profile looks stable." };
+  if (clamped >= 50)
+    return { clamped, label: "Moderate", tone: "orange" as Tone, note: "Some markers need closer monitoring." };
+  return { clamped, label: "Needs Attention", tone: "red" as Tone, note: "Several markers need medical attention." };
+};
+
+// Circular progress ring for the health score — animates 0 → score on mount.
+const HealthRing = ({ score }: { score: number }) => {
+  const { clamped, tone } = scoreBand(score);
+  const animated = useCountUp(clamped);
+  const R = 58;
+  const C = 2 * Math.PI * R;
+  const offset = C - (animated / 100) * C;
+  return (
+    <div className="relative w-[152px] h-[152px] flex items-center justify-center">
+      <svg width="152" height="152" viewBox="0 0 152 152" className="-rotate-90">
+        <circle cx="76" cy="76" r={R} stroke="#e9edf3" strokeWidth="13" fill="none" />
+        <circle
+          cx="76"
+          cy="76"
+          r={R}
+          stroke={toneStroke[tone]}
+          strokeWidth="13"
+          fill="none"
+          strokeLinecap="round"
+          strokeDasharray={C}
+          strokeDashoffset={offset}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
+        <span className="text-[46px] font-bold tracking-tight text-slate-900 tabular-nums">
+          {Math.round(animated)}
+        </span>
+        <span className="mt-1.5 text-[11px] font-medium tracking-wide text-slate-500">OUT OF 100</span>
+      </div>
+    </div>
+  );
+};
+
+// AI interpretation rendered as real paragraphs with a gentle typing reveal.
+const AiInterpretation = ({ paragraphs }: { paragraphs: string[] }) => {
+  const full = paragraphs.join("\n\n");
+  const typed = useTypewriter(full);
+  const isTyping = typed.length < full.length;
+  const visible = (typed || "").split("\n\n");
+  return (
+    <div className="rounded-2xl bg-purple-50/70 border border-purple-100 p-5 md:p-6 space-y-3.5">
+      {visible.map((p, i) => (
+        <p key={i} className="text-[15px] leading-[1.75] text-slate-700">
+          {p}
+          {isTyping && i === visible.length - 1 && (
+            <span className="inline-block w-[2px] h-[1.05em] align-[-0.15em] ml-0.5 bg-purple-500 animate-pulse" />
+          )}
+        </p>
+      ))}
+    </div>
+  );
+};
+
+const InfoRow = ({ icon: Icon, label, value }: { icon: any; label: string; value: string }) => (
+  <div className="flex items-center gap-3 py-1">
+    <div className="p-2 rounded-lg bg-white/5 border border-white/10">
+      <Icon className="w-4 h-4 text-purple-200" />
+    </div>
+    <div className="min-w-0">
+      <p className="text-[11px] uppercase tracking-wider text-white/55">{label}</p>
+      <p className="text-white text-sm font-medium truncate">{value || "—"}</p>
+    </div>
+  </div>
+);
+
+// Extract a display value from an analysis entry or raw thyroid map.
+const readValue = (entry: any, raw: any): string | number => {
+  const v = entry?.value ?? entry?.level ?? entry?.result ?? raw;
+  if (v === null || v === undefined || v === "") return "—";
+  if (typeof v === "object") return v.value ?? v.level ?? "—";
+  return v;
+};
+
+const formatValue = (v: string | number) => (v === "—" || v === "N/A" ? "—" : v);
+
+// Coerce any marker shape (number, string, {value}) to a number for trends.
+const numOf = (v: any): number | null => {
+  if (v === null || v === undefined) return null;
+  if (typeof v === "object") return numOf(v.value ?? v.level ?? v.result);
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+const getField = (obj: any, keys: string[]): string => {
+  if (!obj) return "";
+  for (const k of keys) {
+    const v = obj[k];
+    if (v !== undefined && v !== null && v !== "") return String(v);
+  }
+  return "";
+};
+
+// Pick a recommendation icon from keywords in the text.
+const recIconFor = (text: string) => {
+  const t = text.toLowerCase();
+  if (/(diet|food|nutri|eat|iodine|selenium|vitamin)/.test(t))
+    return { Icon: Apple, label: "Nutrition", tone: "green" as Tone };
+  if (/(medic|drug|dose|levothyroxine|tablet|prescrib)/.test(t))
+    return { Icon: Pill, label: "Medication", tone: "blue" as Tone };
+  if (/(exercis|activ|walk|yoga|workout|movement)/.test(t))
+    return { Icon: Activity, label: "Exercise", tone: "orange" as Tone };
+  if (/(sleep|rest|bed)/.test(t)) return { Icon: Moon, label: "Sleep", tone: "blue" as Tone };
+  if (/(water|hydrat|fluid)/.test(t)) return { Icon: Droplet, label: "Hydration", tone: "blue" as Tone };
+  if (/(doctor|physician|consult|endocrin|follow.?up|test|monitor)/.test(t))
+    return { Icon: Stethoscope, label: "Medical Follow-up", tone: "yellow" as Tone };
+  return { Icon: Lightbulb, label: "Tip", tone: "muted" as Tone };
+};
+
 const LabReportAnalysis = () => {
   const navigate = useNavigate();
   const { toast } = useToast();

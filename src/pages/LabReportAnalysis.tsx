@@ -1194,15 +1194,17 @@ const LabReportAnalysis = () => {
                   Report History ({reports.length})
                 </h3>
                 <div className="space-y-3">
-                  {reports.map((report) => (
+                  {reports.map((report, i) => (
                     <div
                       key={report.id}
-                      className={`bg-white/[0.03] border rounded-2xl p-4 transition-all duration-300 hover:bg-white/[0.06] ${
+                      style={{ animationDelay: `${i * 60}ms`, animationFillMode: "both" }}
+                      className={`bg-white/[0.03] border rounded-2xl p-4 transition-all duration-300 hover:bg-white/[0.06] hover:-translate-y-0.5 animate-fade-in ${
                         report.id === justAnalyzedId
                           ? "border-pink-400/50 shadow-[0_0_20px_rgba(236,72,153,0.25)]"
                           : "border-white/10"
                       }`}
                     >
+
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2 flex-wrap">

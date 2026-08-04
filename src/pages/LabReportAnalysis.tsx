@@ -54,23 +54,25 @@ const LOADING_MESSAGES = [
    ══════════════════════════════════════════════════════════════════════════ */
 
 // Normalize backend status/severity to a colour tone.
+// Direction wins over severity: Green = Normal, Yellow = Borderline,
+// Red = High, Blue = Low.
 const toneFor = (status?: string, severity?: string): Tone => {
   const s = (status || "").toLowerCase().trim();
-  // Direction first — "Low" must read blue even when severity says mild/severe.
-  if (/^(very )?low$/.test(s) || s === "below range" || s === "deficient") return "blue";
+  if (/^(very |severely )?low$/.test(s) || s === "below range" || s === "deficient") return "blue";
+  if (/^(very |severely )?high$/.test(s) || s === "elevated" || s === "above range") return "red";
+  if (s === "normal" || s === "optimal" || s === "within range") return "green";
+  if (s === "borderline" || s === "slightly low" || s === "mildly low") return "yellow";
+  if (s === "slightly high" || s === "mildly high") return "orange";
 
+  // Fall back to severity only when the status gives no direction.
   const sev = (severity || "").toLowerCase();
   if (sev === "severe" || sev === "critical") return "red";
   if (sev === "moderate") return "orange";
   if (sev === "mild" || sev === "borderline") return "yellow";
   if (sev === "normal") return "green";
-
-  if (s === "normal" || s === "optimal" || s === "within range") return "green";
-  if (s === "borderline" || s === "slightly low") return "yellow";
-  if (s === "slightly high" || s === "mildly high") return "orange";
-  if (s === "high" || s === "very high" || s === "elevated") return "red";
   return "muted";
 };
+
 
 // Tone → styling maps for the dark purple surface.
 const toneCard: Record<Tone, string> = {

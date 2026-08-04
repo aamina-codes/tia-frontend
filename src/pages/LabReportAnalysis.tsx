@@ -624,12 +624,31 @@ const LabReportAnalysis = () => {
               Anti_TPO: { label: "Anti-TPO", unit: "IU/mL", rangeKey: "AntiTPO" },
             };
 
+            // Previous report (reports are stored newest-first) powers trend indicators.
+            const currentIndex = reports.findIndex((r) => r.id === displayReport.id);
+            const previousReport = currentIndex >= 0 ? reports[currentIndex + 1] : undefined;
+
             const markers = markerKeys.map((k) => {
               const entry = analysis?.[k] ?? {};
               const rawVal = raw?.[k];
               const hasData = entry !== undefined && (Object.keys(entry).length > 0 || rawVal !== undefined);
               const rangeKey = markerLabels[k].rangeKey;
               const range = rangeKey ? MARKER_RANGES[rangeKey] : undefined;
+
+              // Trend vs the previous report, when both values are numeric.
+              const current = numOf(entry?.value ?? rawVal);
+              const prev = previousReport
+                ? numOf(previousReport.analysis?.[k]?.value ?? previousReport.thyroidValues?.[k])
+                : null;
+              let trend: Trend = null;
+              let delta: number | undefined;
+              if (current !== null && prev !== null) {
+                delta = current - prev;
+                // Treat sub-2% movement as clinically flat.
+                const flat = Math.abs(delta) < Math.max(Math.abs(prev) * 0.02, 0.001);
+                trend = flat ? "stable" : delta > 0 ? "up" : "down";
+              }
+
               return {
                 key: k,
                 label: markerLabels[k].label,
@@ -638,30 +657,30 @@ const LabReportAnalysis = () => {
                 status: hasData ? entry?.status ?? "Normal" : "Not Available",
                 severity: entry?.severity,
                 tone: hasData ? toneFor(entry?.status, entry?.severity) : ("muted" as Tone),
-                range: range ? `${range.min} - ${range.max}` : undefined,
+                range: range ? `${range.min} – ${range.max}` : undefined,
                 hasData,
+                trend,
+                delta,
               };
             });
 
             const availableMarkers = markers.filter((m) => m.hasData);
             const abnormalTests = availableMarkers.filter((m) => m.tone !== "green" && m.tone !== "muted");
 
-            const riskLevel: string = displayReport.risk?.level ?? displayReport.risk?.risk ?? "Unknown";
-            // Risk level uses the standard medical colour system:
-            // low → green, moderate → amber, high → red, unknown → gray.
-            const riskTone: Tone = (() => {
-              const r = String(riskLevel).toLowerCase();
-              if (/high|severe|critical/.test(r)) return "red";
-              if (/moderate|medium|borderline/.test(r)) return "yellow";
-              if (/low|minimal|none/.test(r)) return "green";
-              return "muted";
-            })();
             const healthScore: number | undefined =
               displayReport.risk?.score ?? displayReport.risk?.health_score;
+            const previousScore: number | undefined =
+              previousReport?.risk?.score ?? previousReport?.risk?.health_score;
+            const scoreDelta =
+              healthScore !== undefined && healthScore !== null && previousScore !== undefined && previousScore !== null
+                ? Math.round(Number(healthScore)) - Math.round(Number(previousScore))
+                : undefined;
 
             // Dynamic overall status: Stable → Borderline → Needs Monitoring → Critical
             const overallTone: Tone =
-              abnormalTests.length === 0
+              availableMarkers.length === 0
+                ? "muted"
+                : abnormalTests.length === 0
                 ? "green"
                 : abnormalTests.some((m) => m.tone === "red")
                 ? "red"
@@ -675,14 +694,88 @@ const LabReportAnalysis = () => {
                 ? "Critical"
                 : overallTone === "orange"
                 ? "Needs Monitoring"
-                : "Borderline";
+                : overallTone === "yellow"
+                ? "Borderline"
+                : "Awaiting Results";
 
+            // Risk level — never surface "Unknown". When the backend omits a
+            // level we derive a meaningful category from the marker findings.
+            const rawRisk = String(
+              displayReport.risk?.level ?? displayReport.risk?.risk ?? "",
+            ).trim();
+            const hasUsableRisk = rawRisk !== "" && !/unknown|n\/?a|null/i.test(rawRisk);
+            const derivedRisk =
+              availableMarkers.length === 0
+                ? "Needs Clinical Review"
+                : overallTone === "green"
+                ? "Low"
+                : overallTone === "yellow"
+                ? "Moderate"
+                : overallTone === "orange"
+                ? "Needs Clinical Review"
+                : "High";
+            const riskLevel = hasUsableRisk ? rawRisk : derivedRisk;
+            const riskTone: Tone = (() => {
+              const r = riskLevel.toLowerCase();
+              if (/high|severe|critical/.test(r)) return "red";
+              if (/review|monitor/.test(r)) return "orange";
+              if (/moderate|medium|borderline/.test(r)) return "yellow";
+              if (/low|minimal|none/.test(r)) return "green";
+              return "orange";
+            })();
+            const riskLabel = /risk|review$/i.test(riskLevel) ? riskLevel : `${riskLevel} Risk`;
 
-            const interpretation: string =
-              (analysis as any)?.interpretation ??
-              (analysis as any)?.overall ??
-              displayReport.summary ??
-              "";
+            // ── AI Interpretation → natural-language paragraphs ─────────────
+            const backendText: string = String(
+              (analysis as any)?.interpretation ?? (analysis as any)?.overall ?? displayReport.summary ?? "",
+            ).trim();
+
+            const listMarkers = (items: typeof markers) =>
+              items.length === 1
+                ? items[0].label
+                : `${items.slice(0, -1).map((m) => m.label).join(", ")} and ${items[items.length - 1].label}`;
+
+            const openingParagraph = (() => {
+              if (availableMarkers.length === 0)
+                return "We could not read enough thyroid values from this report to interpret it confidently. Uploading a clearer copy, or one that includes TSH along with T3 and T4, will let TIA give you a full picture.";
+              const scoreClause =
+                healthScore !== undefined && healthScore !== null
+                  ? ` Your overall thyroid health score for this report is ${Math.round(Number(healthScore))} out of 100, which we read as ${scoreBand(Number(healthScore)).label.toLowerCase()}.`
+                  : "";
+              if (abnormalTests.length === 0)
+                return `Good news — every thyroid marker we could read from this report sits inside its expected reference range.${scoreClause} That points to a thyroid that is currently well balanced.`;
+              return `We reviewed ${availableMarkers.length} thyroid marker${availableMarkers.length === 1 ? "" : "s"} in this report and ${abnormalTests.length} of them fell outside the expected range: ${listMarkers(abnormalTests)}.${scoreClause} Overall, your profile reads as ${overallStatus.toLowerCase()}.`;
+            })();
+
+            const trendParagraph = (() => {
+              if (!previousReport) return "";
+              const moved = markers.filter((m) => m.trend && m.trend !== "stable");
+              if (moved.length === 0)
+                return "Compared with your previous report, your thyroid values have held steady. Consistency like this is usually a sign that your current routine and treatment are working.";
+              const risen = moved.filter((m) => m.trend === "up");
+              const fallen = moved.filter((m) => m.trend === "down");
+              const parts: string[] = [];
+              if (risen.length) parts.push(`${listMarkers(risen)} moved higher`);
+              if (fallen.length) parts.push(`${listMarkers(fallen)} moved lower`);
+              const scoreClause =
+                scoreDelta !== undefined && scoreDelta !== 0
+                  ? ` Your health score has ${scoreDelta > 0 ? "improved" : "dropped"} by ${Math.abs(scoreDelta)} point${Math.abs(scoreDelta) === 1 ? "" : "s"} since then.`
+                  : "";
+              return `Compared with your previous report, ${parts.join(", while ")}.${scoreClause} Single-report changes are normal, so it is the direction over several tests that matters most.`;
+            })();
+
+            const closingParagraph =
+              abnormalTests.length === 0
+                ? "Keep up your current medication, diet and sleep routine, and continue testing at the interval your doctor recommends."
+                : "This is an educational reading of your numbers, not a diagnosis. Share this report with your doctor so they can confirm what these values mean for you and adjust anything if needed.";
+
+            const interpretationParagraphs = [
+              openingParagraph,
+              trendParagraph,
+              backendText && backendText !== openingParagraph ? backendText : "",
+              closingParagraph,
+            ].filter(Boolean);
+
 
             const conditions: any[] = displayReport.possibleConditions ?? [];
             const recs: any[] = displayReport.recommendations ?? [];

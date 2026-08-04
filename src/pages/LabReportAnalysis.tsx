@@ -836,41 +836,63 @@ const LabReportAnalysis = () => {
 
                   {/* Thyroid Profile */}
                   <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-pink-300" />
-                        Thyroid Profile
-                      </h2>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${toneBadge[overallTone]}`}>
-                        {toneDot[overallTone]} {overallStatus}
+                    <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+                      <div>
+                        <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+                          <Sparkles className="w-5 h-5 text-pink-300" />
+                          Thyroid Profile
+                        </h2>
+                        <p className="text-white/60 text-sm mt-1">
+                          {previousReport
+                            ? "Values compared against your previous report."
+                            : "Values measured against standard reference ranges."}
+                        </p>
+                      </div>
+                      <span
+                        className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold animate-fade-in ${toneBadge[overallTone]}`}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${toneDotDark[overallTone]}`} />
+                        {overallStatus}
                       </span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {markers.map((m) => (
+                      {markers.map((m, i) => (
                         <Card
                           key={m.key}
-                          className={`backdrop-blur-xl border rounded-2xl transition-all duration-300 hover:-translate-y-0.5 ${toneCard[m.tone]}`}
+                          style={{ animationDelay: `${i * 70}ms`, animationFillMode: "both" }}
+                          className={`backdrop-blur-xl border rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl animate-fade-in ${toneCard[m.tone]}`}
                         >
                           <CardContent className="p-5">
-                            <div className="flex items-start justify-between mb-3">
-                              <div>
-                                <h3 className="text-white font-semibold">{m.label}</h3>
-                                <p className="text-white/50 text-[11px] uppercase tracking-wider">{m.unit}</p>
+                            <div className="flex items-start justify-between gap-3 mb-4">
+                              <div className="min-w-0">
+                                <h3 className="text-white font-semibold text-[15px] leading-tight">{m.label}</h3>
+                                <p className="text-white/50 text-[11px] uppercase tracking-wider mt-0.5">{m.unit}</p>
                               </div>
-                              <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${toneBadge[m.tone]}`}>
-                                {toneDot[m.tone]} {m.hasData ? m.status : "Not Available"}
+                              <span
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold shrink-0 animate-fade-in ${toneBadge[m.tone]}`}
+                              >
+                                <span className={`w-1.5 h-1.5 rounded-full ${toneDotDark[m.tone]}`} />
+                                {m.hasData ? m.status : "Not Available"}
                               </span>
                             </div>
-                            <div className="flex items-baseline gap-1 mb-2">
-                              <span className={`text-3xl font-bold ${toneText[m.tone]}`}>
+
+                            <div className="flex items-baseline gap-1.5">
+                              <span className={`text-[34px] leading-none font-bold tabular-nums ${toneText[m.tone]}`}>
                                 {formatValue(m.value)}
                               </span>
-                              {m.hasData && <span className="text-white/40 text-xs">{m.unit}</span>}
+                              {m.hasData && <span className="text-white/45 text-xs font-medium">{m.unit}</span>}
                             </div>
+
+                            {m.trend && (
+                              <div className="mt-3">
+                                <TrendPill trend={m.trend} delta={m.delta} />
+                              </div>
+                            )}
+
                             {m.range && (
-                              <div className="pt-2 border-t border-white/10">
-                                <p className="text-[11px] text-white/50 uppercase tracking-wider">Reference Range</p>
-                                <p className="text-white/80 text-sm font-medium">{m.range}</p>
+                              <div className="mt-4 pt-3 border-t border-white/10">
+                                <p className="text-[10px] text-white/45 uppercase tracking-[0.12em]">Reference Range</p>
+                                <p className="text-white/85 text-sm font-medium mt-0.5">{m.range}</p>
                               </div>
                             )}
                           </CardContent>
@@ -878,6 +900,7 @@ const LabReportAnalysis = () => {
                       ))}
                     </div>
                   </div>
+
 
                   {/* AI Clinical Analysis — light "report paper" surface for readability */}
                   <Card className="bg-white border border-purple-200/60 rounded-3xl overflow-hidden shadow-[0_18px_50px_-18px_rgba(30,0,61,0.55)] animate-fade-in">

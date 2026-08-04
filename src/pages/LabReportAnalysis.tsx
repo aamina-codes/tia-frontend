@@ -678,17 +678,22 @@ const LabReportAnalysis = () => {
                 ? Math.round(Number(healthScore)) - Math.round(Number(previousScore))
                 : undefined;
 
-            // Dynamic overall status: Stable → Borderline → Needs Monitoring → Critical
+            // Dynamic overall status: Stable → Borderline → Needs Monitoring → Critical.
+            // A red marker only escalates to "Critical" when the backend does not
+            // call it mild/borderline — a mildly high value shouldn't alarm the user.
+            const isMildSeverity = (sev?: string) =>
+              ["mild", "borderline", "slight"].includes(String(sev || "").toLowerCase());
             const overallTone: Tone =
               availableMarkers.length === 0
                 ? "muted"
                 : abnormalTests.length === 0
                 ? "green"
-                : abnormalTests.some((m) => m.tone === "red")
+                : abnormalTests.some((m) => m.tone === "red" && !isMildSeverity(m.severity))
                 ? "red"
-                : abnormalTests.some((m) => m.tone === "orange")
+                : abnormalTests.some((m) => m.tone === "orange" || m.tone === "red" || m.tone === "blue")
                 ? "orange"
                 : "yellow";
+
             const overallStatus =
               overallTone === "green"
                 ? "Stable"

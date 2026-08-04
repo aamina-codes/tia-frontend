@@ -467,7 +467,7 @@ const LabReportAnalysis = () => {
       {/* Upload */}
       <section className="relative z-10 px-6 pb-10">
         <div className="max-w-3xl mx-auto">
-          <Card className="bg-white/[0.04] backdrop-blur-xl border border-purple-300/25 rounded-3xl overflow-hidden">
+          <Card className="group bg-white/[0.04] backdrop-blur-xl border border-purple-300/25 rounded-3xl overflow-hidden transition-all duration-500 hover:border-pink-300/50 hover:bg-white/[0.06] hover:shadow-[0_0_60px_-15px_rgba(236,72,153,0.55)]">
             <CardContent className="p-8 md:p-10">
               <div className="flex flex-col items-center text-center space-y-5">
                 <div

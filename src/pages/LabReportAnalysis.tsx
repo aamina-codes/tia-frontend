@@ -49,6 +49,295 @@ const LOADING_MESSAGES = [
   "Preparing recommendations...",
 ];
 
+/* ══════════════════════════════════════════════════════════════════════════
+   Colour system — Green: Normal · Yellow: Borderline · Red: High · Blue: Low
+   ══════════════════════════════════════════════════════════════════════════ */
+
+// Normalize backend status/severity to a colour tone.
+// Direction wins over severity: Green = Normal, Yellow = Borderline,
+// Red = High, Blue = Low.
+const toneFor = (status?: string, severity?: string): Tone => {
+  const s = (status || "").toLowerCase().trim();
+  if (/^(very |severely )?low$/.test(s) || s === "below range" || s === "deficient") return "blue";
+  if (/^(very |severely )?high$/.test(s) || s === "elevated" || s === "above range") return "red";
+  if (s === "normal" || s === "optimal" || s === "within range") return "green";
+  if (s === "borderline" || s === "slightly low" || s === "mildly low") return "yellow";
+  if (s === "slightly high" || s === "mildly high") return "orange";
+
+  // Fall back to severity only when the status gives no direction.
+  const sev = (severity || "").toLowerCase();
+  if (sev === "severe" || sev === "critical") return "red";
+  if (sev === "moderate") return "orange";
+  if (sev === "mild" || sev === "borderline") return "yellow";
+  if (sev === "normal") return "green";
+  return "muted";
+};
+
+
+// Tone → styling maps for the dark purple surface.
+const toneCard: Record<Tone, string> = {
+  green: "bg-emerald-500/10 border-emerald-400/40 shadow-[0_10px_34px_-14px_rgba(16,185,129,0.55)]",
+  yellow: "bg-yellow-500/10 border-yellow-400/40 shadow-[0_10px_34px_-14px_rgba(234,179,8,0.5)]",
+  orange: "bg-orange-500/10 border-orange-400/40 shadow-[0_10px_34px_-14px_rgba(251,146,60,0.55)]",
+  red: "bg-red-500/10 border-red-400/40 shadow-[0_10px_34px_-14px_rgba(239,68,68,0.6)]",
+  blue: "bg-sky-500/10 border-sky-400/40 shadow-[0_10px_34px_-14px_rgba(56,189,248,0.5)]",
+  muted: "bg-white/[0.04] border-white/12",
+};
+
+const toneText: Record<Tone, string> = {
+  green: "text-emerald-300",
+  yellow: "text-yellow-200",
+  orange: "text-orange-300",
+  red: "text-red-300",
+  blue: "text-sky-300",
+  muted: "text-white/60",
+};
+
+const toneBadge: Record<Tone, string> = {
+  green: "bg-emerald-500/20 text-emerald-100 border border-emerald-400/50",
+  yellow: "bg-yellow-500/20 text-yellow-50 border border-yellow-400/50",
+  orange: "bg-orange-500/20 text-orange-50 border border-orange-400/50",
+  red: "bg-red-500/20 text-red-50 border border-red-400/50",
+  blue: "bg-sky-500/20 text-sky-50 border border-sky-400/50",
+  muted: "bg-white/10 text-white/70 border border-white/20",
+};
+
+const toneDotDark: Record<Tone, string> = {
+  green: "bg-emerald-400",
+  yellow: "bg-yellow-300",
+  orange: "bg-orange-400",
+  red: "bg-red-400",
+  blue: "bg-sky-400",
+  muted: "bg-white/40",
+};
+
+// ── Light-surface variants (AI Clinical Analysis "report paper" card) ────────
+const toneTextOnLight: Record<Tone, string> = {
+  green: "text-emerald-700",
+  yellow: "text-amber-700",
+  orange: "text-orange-700",
+  red: "text-red-700",
+  blue: "text-sky-700",
+  muted: "text-slate-500",
+};
+
+const toneBadgeOnLight: Record<Tone, string> = {
+  green: "bg-emerald-50 text-emerald-800 border border-emerald-300",
+  yellow: "bg-amber-50 text-amber-800 border border-amber-300",
+  orange: "bg-orange-50 text-orange-800 border border-orange-300",
+  red: "bg-red-50 text-red-800 border border-red-300",
+  blue: "bg-sky-50 text-sky-800 border border-sky-300",
+  muted: "bg-slate-100 text-slate-700 border border-slate-300",
+};
+
+const toneDotOnLight: Record<Tone, string> = {
+  green: "bg-emerald-500",
+  yellow: "bg-amber-500",
+  orange: "bg-orange-500",
+  red: "bg-red-500",
+  blue: "bg-sky-500",
+  muted: "bg-slate-400",
+};
+
+const toneStroke: Record<Tone, string> = {
+  green: "#059669",
+  yellow: "#d97706",
+  orange: "#ea580c",
+  red: "#dc2626",
+  blue: "#0284c7",
+  muted: "#94a3b8",
+};
+
+const StatusDot = ({ tone }: { tone: Tone }) => (
+  <span className={`w-2 h-2 rounded-full shrink-0 ${toneDotOnLight[tone]}`} />
+);
+
+/* ── Micro-interaction helpers ─────────────────────────────────────────────
+   Subtle only: a score that counts up, text that types itself, badges and
+   cards that ease into view. No bounce, no flash.                          */
+
+// Animates a number 0 → target on an ease-out curve.
+const useCountUp = (target: number, duration = 1300) => {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (!Number.isFinite(target)) return;
+    let frame = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      setValue(target * (1 - Math.pow(1 - t, 3)));
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [target, duration]);
+  return value;
+};
+
+// Reveals text progressively for the AI typing effect.
+const useTypewriter = (text: string, charsPerTick = 4, speed = 18) => {
+  const [shown, setShown] = useState("");
+  useEffect(() => {
+    setShown("");
+    if (!text) return;
+    let i = 0;
+    const id = setInterval(() => {
+      i += charsPerTick;
+      setShown(text.slice(0, i));
+      if (i >= text.length) clearInterval(id);
+    }, speed);
+    return () => clearInterval(id);
+  }, [text, charsPerTick, speed]);
+  return shown;
+};
+
+type Trend = "up" | "down" | "stable" | null;
+
+const TREND_META = {
+  up: { symbol: "▲", label: "Increased", cls: "text-orange-200 bg-orange-500/15 border-orange-400/35" },
+  down: { symbol: "▼", label: "Decreased", cls: "text-sky-200 bg-sky-500/15 border-sky-400/35" },
+  stable: { symbol: "•", label: "Stable", cls: "text-white/75 bg-white/10 border-white/20" },
+} as const;
+
+const TrendPill = ({ trend, delta }: { trend: Trend; delta?: number }) => {
+  if (!trend) return null;
+  const t = TREND_META[trend];
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-[3px] rounded-full border text-[10px] font-semibold animate-fade-in ${t.cls}`}
+    >
+      <span aria-hidden="true">{t.symbol}</span>
+      {t.label}
+      {delta !== undefined && delta !== 0 && (
+        <span className="font-normal opacity-75">
+          {delta > 0 ? "+" : ""}
+          {Number(delta.toFixed(2))}
+        </span>
+      )}
+    </span>
+  );
+};
+
+// Score band helper — keeps wording consistent wherever the score is shown.
+const scoreBand = (score: number) => {
+  const clamped = Math.max(0, Math.min(100, Math.round(score)));
+  if (clamped >= 90)
+    return { clamped, label: "Excellent", tone: "green" as Tone, note: "Your thyroid profile looks excellent." };
+  if (clamped >= 70)
+    return { clamped, label: "Good", tone: "green" as Tone, note: "Your thyroid profile looks stable." };
+  if (clamped >= 50)
+    return { clamped, label: "Moderate", tone: "orange" as Tone, note: "Some markers need closer monitoring." };
+  return { clamped, label: "Needs Attention", tone: "red" as Tone, note: "Several markers need medical attention." };
+};
+
+// Circular progress ring for the health score — animates 0 → score on mount.
+const HealthRing = ({ score }: { score: number }) => {
+  const { clamped, tone } = scoreBand(score);
+  const animated = useCountUp(clamped);
+  const R = 58;
+  const C = 2 * Math.PI * R;
+  const offset = C - (animated / 100) * C;
+  return (
+    <div className="relative w-[152px] h-[152px] flex items-center justify-center">
+      <svg width="152" height="152" viewBox="0 0 152 152" className="-rotate-90">
+        <circle cx="76" cy="76" r={R} stroke="#e9edf3" strokeWidth="13" fill="none" />
+        <circle
+          cx="76"
+          cy="76"
+          r={R}
+          stroke={toneStroke[tone]}
+          strokeWidth="13"
+          fill="none"
+          strokeLinecap="round"
+          strokeDasharray={C}
+          strokeDashoffset={offset}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
+        <span className="text-[46px] font-bold tracking-tight text-slate-900 tabular-nums">
+          {Math.round(animated)}
+        </span>
+        <span className="mt-1.5 text-[11px] font-medium tracking-wide text-slate-500">OUT OF 100</span>
+      </div>
+    </div>
+  );
+};
+
+// AI interpretation rendered as real paragraphs with a gentle typing reveal.
+const AiInterpretation = ({ paragraphs }: { paragraphs: string[] }) => {
+  const full = paragraphs.join("\n\n");
+  const typed = useTypewriter(full);
+  const isTyping = typed.length < full.length;
+  const visible = (typed || "").split("\n\n");
+  return (
+    <div className="rounded-2xl bg-purple-50/70 border border-purple-100 p-5 md:p-6 space-y-3.5">
+      {visible.map((p, i) => (
+        <p key={i} className="text-[15px] leading-[1.75] text-slate-700">
+          {p}
+          {isTyping && i === visible.length - 1 && (
+            <span className="inline-block w-[2px] h-[1.05em] align-[-0.15em] ml-0.5 bg-purple-500 animate-pulse" />
+          )}
+        </p>
+      ))}
+    </div>
+  );
+};
+
+const InfoRow = ({ icon: Icon, label, value }: { icon: any; label: string; value: string }) => (
+  <div className="flex items-center gap-3 py-1">
+    <div className="p-2 rounded-lg bg-white/5 border border-white/10">
+      <Icon className="w-4 h-4 text-purple-200" />
+    </div>
+    <div className="min-w-0">
+      <p className="text-[11px] uppercase tracking-wider text-white/55">{label}</p>
+      <p className="text-white text-sm font-medium truncate">{value || "—"}</p>
+    </div>
+  </div>
+);
+
+// Extract a display value from an analysis entry or raw thyroid map.
+const readValue = (entry: any, raw: any): string | number => {
+  const v = entry?.value ?? entry?.level ?? entry?.result ?? raw;
+  if (v === null || v === undefined || v === "") return "—";
+  if (typeof v === "object") return v.value ?? v.level ?? "—";
+  return v;
+};
+
+const formatValue = (v: string | number) => (v === "—" || v === "N/A" ? "—" : v);
+
+// Coerce any marker shape (number, string, {value}) to a number for trends.
+const numOf = (v: any): number | null => {
+  if (v === null || v === undefined) return null;
+  if (typeof v === "object") return numOf(v.value ?? v.level ?? v.result);
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+const getField = (obj: any, keys: string[]): string => {
+  if (!obj) return "";
+  for (const k of keys) {
+    const v = obj[k];
+    if (v !== undefined && v !== null && v !== "") return String(v);
+  }
+  return "";
+};
+
+// Pick a recommendation icon from keywords in the text.
+const recIconFor = (text: string) => {
+  const t = text.toLowerCase();
+  if (/(diet|food|nutri|eat|iodine|selenium|vitamin)/.test(t))
+    return { Icon: Apple, label: "Nutrition", tone: "green" as Tone };
+  if (/(medic|drug|dose|levothyroxine|tablet|prescrib)/.test(t))
+    return { Icon: Pill, label: "Medication", tone: "blue" as Tone };
+  if (/(exercis|activ|walk|yoga|workout|movement)/.test(t))
+    return { Icon: Activity, label: "Exercise", tone: "orange" as Tone };
+  if (/(sleep|rest|bed)/.test(t)) return { Icon: Moon, label: "Sleep", tone: "blue" as Tone };
+  if (/(water|hydrat|fluid)/.test(t)) return { Icon: Droplet, label: "Hydration", tone: "blue" as Tone };
+  if (/(doctor|physician|consult|endocrin|follow.?up|test|monitor)/.test(t))
+    return { Icon: Stethoscope, label: "Medical Follow-up", tone: "yellow" as Tone };
+  return { Icon: Lightbulb, label: "Tip", tone: "muted" as Tone };
+};
+
 const LabReportAnalysis = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -78,114 +367,6 @@ const LabReportAnalysis = () => {
     const id = setTimeout(() => setShowSuccess(false), 2400);
     return () => clearTimeout(id);
   }, [showSuccess]);
-
-  // Normalize backend status/severity to a color tone.
-  const toneFor = (status?: string, severity?: string): Tone => {
-    const sev = (severity || "").toLowerCase();
-    if (sev === "severe" || sev === "critical") return "red";
-    if (sev === "moderate") return "orange";
-    if (sev === "mild" || sev === "borderline") return "yellow";
-    if (sev === "normal") return "green";
-
-    const s = (status || "").toLowerCase();
-    if (s === "normal" || s === "optimal") return "green";
-    if (s === "low") return "yellow";
-    if (s === "slightly high" || s === "borderline") return "orange";
-    if (s === "high" || s === "very high" || s === "very low") return "red";
-    return "muted";
-  };
-
-  // Tone → styling maps. Uses translucent tints that work on the dark purple bg.
-  const toneCard: Record<Tone, string> = {
-    green: "bg-emerald-500/10 border-emerald-400/40 shadow-[0_0_28px_rgba(16,185,129,0.25)]",
-    yellow: "bg-yellow-500/10 border-yellow-400/40 shadow-[0_0_28px_rgba(234,179,8,0.22)]",
-    orange: "bg-orange-500/10 border-orange-400/40 shadow-[0_0_28px_rgba(251,146,60,0.25)]",
-    red: "bg-red-500/10 border-red-400/40 shadow-[0_0_28px_rgba(239,68,68,0.3)]",
-    blue: "bg-sky-500/10 border-sky-400/40 shadow-[0_0_28px_rgba(56,189,248,0.22)]",
-    muted: "bg-white/5 border-white/15",
-  };
-
-  const toneText: Record<Tone, string> = {
-    green: "text-emerald-300",
-    yellow: "text-yellow-200",
-    orange: "text-orange-300",
-    red: "text-red-300",
-    blue: "text-sky-300",
-    muted: "text-white/60",
-  };
-
-  const toneBadge: Record<Tone, string> = {
-    green: "bg-emerald-500/20 text-emerald-200 border border-emerald-400/50",
-    yellow: "bg-yellow-500/20 text-yellow-100 border border-yellow-400/50",
-    orange: "bg-orange-500/20 text-orange-100 border border-orange-400/50",
-    red: "bg-red-500/20 text-red-100 border border-red-400/50",
-    blue: "bg-sky-500/20 text-sky-100 border border-sky-400/50",
-    muted: "bg-white/10 text-white/70 border border-white/20",
-  };
-
-  const toneDot: Record<Tone, string> = {
-    green: "🟢",
-    yellow: "🟡",
-    orange: "🟠",
-    red: "🔴",
-    blue: "🔵",
-    muted: "⚪",
-  };
-
-  // ── Light-surface variants ────────────────────────────────────────────────
-  // Used inside the AI Clinical Analysis report card, which sits on a light
-  // paper-like surface so body copy stays high-contrast and accessible.
-  const toneTextOnLight: Record<Tone, string> = {
-    green: "text-emerald-700",
-    yellow: "text-amber-700",
-    orange: "text-orange-700",
-    red: "text-red-700",
-    blue: "text-sky-700",
-    muted: "text-slate-500",
-  };
-
-  const toneBadgeOnLight: Record<Tone, string> = {
-    green: "bg-emerald-50 text-emerald-800 border border-emerald-300",
-    yellow: "bg-amber-50 text-amber-800 border border-amber-300",
-    orange: "bg-orange-50 text-orange-800 border border-orange-300",
-    red: "bg-red-50 text-red-800 border border-red-300",
-    blue: "bg-sky-50 text-sky-800 border border-sky-300",
-    muted: "bg-slate-100 text-slate-700 border border-slate-300",
-  };
-
-  const toneDotOnLight: Record<Tone, string> = {
-    green: "bg-emerald-500",
-    yellow: "bg-amber-500",
-    orange: "bg-orange-500",
-    red: "bg-red-500",
-    blue: "bg-sky-500",
-    muted: "bg-slate-400",
-  };
-
-  const toneStroke: Record<Tone, string> = {
-    green: "#059669",
-    yellow: "#d97706",
-    orange: "#ea580c",
-    red: "#dc2626",
-    blue: "#0284c7",
-    muted: "#94a3b8",
-  };
-
-  // Small colored status dot — replaces emoji for a cleaner clinical look.
-  const StatusDot = ({ tone }: { tone: Tone }) => (
-    <span className={`w-2 h-2 rounded-full shrink-0 ${toneDotOnLight[tone]}`} />
-  );
-
-
-  // Extract a display value from an analysis entry or raw thyroid map.
-  const readValue = (entry: any, raw: any): string | number => {
-    const v = entry?.value ?? entry?.level ?? entry?.result ?? raw;
-    if (v === null || v === undefined || v === "") return "—";
-    if (typeof v === "object") return v.value ?? v.level ?? "—";
-    return v;
-  };
-
-  const formatValue = (v: string | number) => (v === "—" || v === "N/A" ? "—" : v);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -241,84 +422,6 @@ const LabReportAnalysis = () => {
 
   const displayReport = justAnalyzedId ? reports.find((r) => r.id === justAnalyzedId) : latestReport;
 
-  // Pick a recommendation icon from keywords in the text.
-  const recIconFor = (text: string) => {
-    const t = text.toLowerCase();
-    if (/(diet|food|nutri|eat|iodine|selenium|vitamin)/.test(t)) return { Icon: Apple, label: "Nutrition", tone: "green" as Tone };
-    if (/(medic|drug|dose|levothyroxine|tablet|prescrib)/.test(t)) return { Icon: Pill, label: "Medication", tone: "blue" as Tone };
-    if (/(exercis|activ|walk|yoga|workout|movement)/.test(t)) return { Icon: Activity, label: "Exercise", tone: "orange" as Tone };
-    if (/(sleep|rest|bed)/.test(t)) return { Icon: Moon, label: "Sleep", tone: "blue" as Tone };
-    if (/(water|hydrat|fluid)/.test(t)) return { Icon: Droplet, label: "Hydration", tone: "blue" as Tone };
-    if (/(doctor|physician|consult|endocrin|follow.?up|test|monitor)/.test(t))
-      return { Icon: Stethoscope, label: "Medical Follow-up", tone: "yellow" as Tone };
-    return { Icon: Lightbulb, label: "Tip", tone: "muted" as Tone };
-  };
-
-  // Score band helper — keeps wording consistent wherever the score is shown.
-  const scoreBand = (score: number) => {
-    const clamped = Math.max(0, Math.min(100, Math.round(score)));
-    if (clamped >= 90)
-      return { clamped, label: "Excellent", tone: "green" as Tone, note: "Overall thyroid health appears excellent." };
-    if (clamped >= 70)
-      return { clamped, label: "Good", tone: "green" as Tone, note: "Overall thyroid health appears stable." };
-    if (clamped >= 50)
-      return { clamped, label: "Moderate", tone: "orange" as Tone, note: "Some markers need closer monitoring." };
-    return { clamped, label: "Poor", tone: "red" as Tone, note: "Several markers need medical attention." };
-  };
-
-  // Circular progress ring for health score (light surface).
-  const HealthRing = ({ score }: { score: number }) => {
-    const { clamped, label, tone } = scoreBand(score);
-    const stroke = toneStroke[tone];
-    const R = 58;
-    const C = 2 * Math.PI * R;
-    const offset = C - (clamped / 100) * C;
-    return (
-      <div className="relative w-[148px] h-[148px] flex items-center justify-center">
-        <svg width="148" height="148" viewBox="0 0 148 148" className="-rotate-90">
-          <circle cx="74" cy="74" r={R} stroke="#e2e8f0" strokeWidth="12" fill="none" />
-          <circle
-            cx="74"
-            cy="74"
-            r={R}
-            stroke={stroke}
-            strokeWidth="12"
-            fill="none"
-            strokeLinecap="round"
-            strokeDasharray={C}
-            strokeDashoffset={offset}
-            style={{ transition: "stroke-dashoffset 1.1s cubic-bezier(0.22,1,0.36,1)" }}
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
-          <span className="text-[44px] font-bold tracking-tight text-slate-900">{clamped}</span>
-          <span className="mt-1 text-[11px] font-medium text-slate-500">out of 100</span>
-        </div>
-      </div>
-    );
-  };
-
-
-  const InfoRow = ({ icon: Icon, label, value }: { icon: any; label: string; value: string }) => (
-    <div className="flex items-center gap-3 py-1">
-      <div className="p-2 rounded-lg bg-white/5 border border-white/10">
-        <Icon className="w-4 h-4 text-purple-200" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[11px] uppercase tracking-wider text-white/50">{label}</p>
-        <p className="text-white/90 text-sm font-medium truncate">{value || "—"}</p>
-      </div>
-    </div>
-  );
-
-  const getField = (obj: any, keys: string[]): string => {
-    if (!obj) return "";
-    for (const k of keys) {
-      const v = obj[k];
-      if (v !== undefined && v !== null && v !== "") return String(v);
-    }
-    return "";
-  };
 
   return (
     <div className="min-h-screen relative overflow-hidden" style={{ backgroundColor: "#1E003D" }}>
@@ -366,7 +469,7 @@ const LabReportAnalysis = () => {
       {/* Upload */}
       <section className="relative z-10 px-6 pb-10">
         <div className="max-w-3xl mx-auto">
-          <Card className="bg-white/[0.04] backdrop-blur-xl border border-purple-300/25 rounded-3xl overflow-hidden">
+          <Card className="group bg-white/[0.04] backdrop-blur-xl border border-purple-300/25 rounded-3xl overflow-hidden transition-all duration-500 hover:border-pink-300/50 hover:bg-white/[0.06] hover:shadow-[0_0_60px_-15px_rgba(236,72,153,0.55)]">
             <CardContent className="p-8 md:p-10">
               <div className="flex flex-col items-center text-center space-y-5">
                 <div
@@ -523,12 +626,31 @@ const LabReportAnalysis = () => {
               Anti_TPO: { label: "Anti-TPO", unit: "IU/mL", rangeKey: "AntiTPO" },
             };
 
+            // Previous report (reports are stored newest-first) powers trend indicators.
+            const currentIndex = reports.findIndex((r) => r.id === displayReport.id);
+            const previousReport = currentIndex >= 0 ? reports[currentIndex + 1] : undefined;
+
             const markers = markerKeys.map((k) => {
               const entry = analysis?.[k] ?? {};
               const rawVal = raw?.[k];
               const hasData = entry !== undefined && (Object.keys(entry).length > 0 || rawVal !== undefined);
               const rangeKey = markerLabels[k].rangeKey;
               const range = rangeKey ? MARKER_RANGES[rangeKey] : undefined;
+
+              // Trend vs the previous report, when both values are numeric.
+              const current = numOf(entry?.value ?? rawVal);
+              const prev = previousReport
+                ? numOf(previousReport.analysis?.[k]?.value ?? previousReport.thyroidValues?.[k])
+                : null;
+              let trend: Trend = null;
+              let delta: number | undefined;
+              if (current !== null && prev !== null) {
+                delta = current - prev;
+                // Treat sub-2% movement as clinically flat.
+                const flat = Math.abs(delta) < Math.max(Math.abs(prev) * 0.02, 0.001);
+                trend = flat ? "stable" : delta > 0 ? "up" : "down";
+              }
+
               return {
                 key: k,
                 label: markerLabels[k].label,
@@ -537,36 +659,41 @@ const LabReportAnalysis = () => {
                 status: hasData ? entry?.status ?? "Normal" : "Not Available",
                 severity: entry?.severity,
                 tone: hasData ? toneFor(entry?.status, entry?.severity) : ("muted" as Tone),
-                range: range ? `${range.min} - ${range.max}` : undefined,
+                range: range ? `${range.min} – ${range.max}` : undefined,
                 hasData,
+                trend,
+                delta,
               };
             });
 
             const availableMarkers = markers.filter((m) => m.hasData);
             const abnormalTests = availableMarkers.filter((m) => m.tone !== "green" && m.tone !== "muted");
 
-            const riskLevel: string = displayReport.risk?.level ?? displayReport.risk?.risk ?? "Unknown";
-            // Risk level uses the standard medical colour system:
-            // low → green, moderate → amber, high → red, unknown → gray.
-            const riskTone: Tone = (() => {
-              const r = String(riskLevel).toLowerCase();
-              if (/high|severe|critical/.test(r)) return "red";
-              if (/moderate|medium|borderline/.test(r)) return "yellow";
-              if (/low|minimal|none/.test(r)) return "green";
-              return "muted";
-            })();
             const healthScore: number | undefined =
               displayReport.risk?.score ?? displayReport.risk?.health_score;
+            const previousScore: number | undefined =
+              previousReport?.risk?.score ?? previousReport?.risk?.health_score;
+            const scoreDelta =
+              healthScore !== undefined && healthScore !== null && previousScore !== undefined && previousScore !== null
+                ? Math.round(Number(healthScore)) - Math.round(Number(previousScore))
+                : undefined;
 
-            // Dynamic overall status: Stable → Borderline → Needs Monitoring → Critical
+            // Dynamic overall status: Stable → Borderline → Needs Monitoring → Critical.
+            // A red marker only escalates to "Critical" when the backend does not
+            // call it mild/borderline — a mildly high value shouldn't alarm the user.
+            const isMildSeverity = (sev?: string) =>
+              ["mild", "borderline", "slight"].includes(String(sev || "").toLowerCase());
             const overallTone: Tone =
-              abnormalTests.length === 0
+              availableMarkers.length === 0
+                ? "muted"
+                : abnormalTests.length === 0
                 ? "green"
-                : abnormalTests.some((m) => m.tone === "red")
+                : abnormalTests.some((m) => m.tone === "red" && !isMildSeverity(m.severity))
                 ? "red"
-                : abnormalTests.some((m) => m.tone === "orange")
+                : abnormalTests.some((m) => m.tone === "orange" || m.tone === "red" || m.tone === "blue")
                 ? "orange"
                 : "yellow";
+
             const overallStatus =
               overallTone === "green"
                 ? "Stable"
@@ -574,14 +701,88 @@ const LabReportAnalysis = () => {
                 ? "Critical"
                 : overallTone === "orange"
                 ? "Needs Monitoring"
-                : "Borderline";
+                : overallTone === "yellow"
+                ? "Borderline"
+                : "Awaiting Results";
 
+            // Risk level — never surface "Unknown". When the backend omits a
+            // level we derive a meaningful category from the marker findings.
+            const rawRisk = String(
+              displayReport.risk?.level ?? displayReport.risk?.risk ?? "",
+            ).trim();
+            const hasUsableRisk = rawRisk !== "" && !/unknown|n\/?a|null/i.test(rawRisk);
+            const derivedRisk =
+              availableMarkers.length === 0
+                ? "Needs Clinical Review"
+                : overallTone === "green"
+                ? "Low"
+                : overallTone === "yellow"
+                ? "Moderate"
+                : overallTone === "orange"
+                ? "Needs Clinical Review"
+                : "High";
+            const riskLevel = hasUsableRisk ? rawRisk : derivedRisk;
+            const riskTone: Tone = (() => {
+              const r = riskLevel.toLowerCase();
+              if (/high|severe|critical/.test(r)) return "red";
+              if (/review|monitor/.test(r)) return "orange";
+              if (/moderate|medium|borderline/.test(r)) return "yellow";
+              if (/low|minimal|none/.test(r)) return "green";
+              return "orange";
+            })();
+            const riskLabel = /risk|review$/i.test(riskLevel) ? riskLevel : `${riskLevel} Risk`;
 
-            const interpretation: string =
-              (analysis as any)?.interpretation ??
-              (analysis as any)?.overall ??
-              displayReport.summary ??
-              "";
+            // ── AI Interpretation → natural-language paragraphs ─────────────
+            const backendText: string = String(
+              (analysis as any)?.interpretation ?? (analysis as any)?.overall ?? displayReport.summary ?? "",
+            ).trim();
+
+            const listMarkers = (items: typeof markers) =>
+              items.length === 1
+                ? items[0].label
+                : `${items.slice(0, -1).map((m) => m.label).join(", ")} and ${items[items.length - 1].label}`;
+
+            const openingParagraph = (() => {
+              if (availableMarkers.length === 0)
+                return "We could not read enough thyroid values from this report to interpret it confidently. Uploading a clearer copy, or one that includes TSH along with T3 and T4, will let TIA give you a full picture.";
+              const scoreClause =
+                healthScore !== undefined && healthScore !== null
+                  ? ` Your overall thyroid health score for this report is ${Math.round(Number(healthScore))} out of 100, which we read as ${scoreBand(Number(healthScore)).label.toLowerCase()}.`
+                  : "";
+              if (abnormalTests.length === 0)
+                return `Good news — every thyroid marker we could read from this report sits inside its expected reference range.${scoreClause} That points to a thyroid that is currently well balanced.`;
+              return `We reviewed ${availableMarkers.length} thyroid marker${availableMarkers.length === 1 ? "" : "s"} in this report and ${abnormalTests.length} of them fell outside the expected range: ${listMarkers(abnormalTests)}.${scoreClause} Overall, your profile reads as ${overallStatus.toLowerCase()}.`;
+            })();
+
+            const trendParagraph = (() => {
+              if (!previousReport) return "";
+              const moved = markers.filter((m) => m.trend && m.trend !== "stable");
+              if (moved.length === 0)
+                return "Compared with your previous report, your thyroid values have held steady. Consistency like this is usually a sign that your current routine and treatment are working.";
+              const risen = moved.filter((m) => m.trend === "up");
+              const fallen = moved.filter((m) => m.trend === "down");
+              const parts: string[] = [];
+              if (risen.length) parts.push(`${listMarkers(risen)} moved higher`);
+              if (fallen.length) parts.push(`${listMarkers(fallen)} moved lower`);
+              const scoreClause =
+                scoreDelta !== undefined && scoreDelta !== 0
+                  ? ` Your health score has ${scoreDelta > 0 ? "improved" : "dropped"} by ${Math.abs(scoreDelta)} point${Math.abs(scoreDelta) === 1 ? "" : "s"} since then.`
+                  : "";
+              return `Compared with your previous report, ${parts.join(", while ")}.${scoreClause} Single-report changes are normal, so it is the direction over several tests that matters most.`;
+            })();
+
+            const closingParagraph =
+              abnormalTests.length === 0
+                ? "Keep up your current medication, diet and sleep routine, and continue testing at the interval your doctor recommends."
+                : "This is an educational reading of your numbers, not a diagnosis. Share this report with your doctor so they can confirm what these values mean for you and adjust anything if needed.";
+
+            const interpretationParagraphs = [
+              openingParagraph,
+              trendParagraph,
+              backendText && backendText !== openingParagraph ? backendText : "",
+              closingParagraph,
+            ].filter(Boolean);
+
 
             const conditions: any[] = displayReport.possibleConditions ?? [];
             const recs: any[] = displayReport.recommendations ?? [];
@@ -642,41 +843,63 @@ const LabReportAnalysis = () => {
 
                   {/* Thyroid Profile */}
                   <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-pink-300" />
-                        Thyroid Profile
-                      </h2>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${toneBadge[overallTone]}`}>
-                        {toneDot[overallTone]} {overallStatus}
+                    <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+                      <div>
+                        <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+                          <Sparkles className="w-5 h-5 text-pink-300" />
+                          Thyroid Profile
+                        </h2>
+                        <p className="text-white/60 text-sm mt-1">
+                          {previousReport
+                            ? "Values compared against your previous report."
+                            : "Values measured against standard reference ranges."}
+                        </p>
+                      </div>
+                      <span
+                        className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold animate-fade-in ${toneBadge[overallTone]}`}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${toneDotDark[overallTone]}`} />
+                        {overallStatus}
                       </span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {markers.map((m) => (
+                      {markers.map((m, i) => (
                         <Card
                           key={m.key}
-                          className={`backdrop-blur-xl border rounded-2xl transition-all duration-300 hover:-translate-y-0.5 ${toneCard[m.tone]}`}
+                          style={{ animationDelay: `${i * 70}ms`, animationFillMode: "both" }}
+                          className={`backdrop-blur-xl border rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl animate-fade-in ${toneCard[m.tone]}`}
                         >
                           <CardContent className="p-5">
-                            <div className="flex items-start justify-between mb-3">
-                              <div>
-                                <h3 className="text-white font-semibold">{m.label}</h3>
-                                <p className="text-white/50 text-[11px] uppercase tracking-wider">{m.unit}</p>
+                            <div className="flex items-start justify-between gap-3 mb-4">
+                              <div className="min-w-0">
+                                <h3 className="text-white font-semibold text-[15px] leading-tight">{m.label}</h3>
+                                <p className="text-white/50 text-[11px] uppercase tracking-wider mt-0.5">{m.unit}</p>
                               </div>
-                              <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${toneBadge[m.tone]}`}>
-                                {toneDot[m.tone]} {m.hasData ? m.status : "Not Available"}
+                              <span
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold shrink-0 animate-fade-in ${toneBadge[m.tone]}`}
+                              >
+                                <span className={`w-1.5 h-1.5 rounded-full ${toneDotDark[m.tone]}`} />
+                                {m.hasData ? m.status : "Not Available"}
                               </span>
                             </div>
-                            <div className="flex items-baseline gap-1 mb-2">
-                              <span className={`text-3xl font-bold ${toneText[m.tone]}`}>
+
+                            <div className="flex items-baseline gap-1.5">
+                              <span className={`text-[34px] leading-none font-bold tabular-nums ${toneText[m.tone]}`}>
                                 {formatValue(m.value)}
                               </span>
-                              {m.hasData && <span className="text-white/40 text-xs">{m.unit}</span>}
+                              {m.hasData && <span className="text-white/45 text-xs font-medium">{m.unit}</span>}
                             </div>
+
+                            {m.trend && (
+                              <div className="mt-3">
+                                <TrendPill trend={m.trend} delta={m.delta} />
+                              </div>
+                            )}
+
                             {m.range && (
-                              <div className="pt-2 border-t border-white/10">
-                                <p className="text-[11px] text-white/50 uppercase tracking-wider">Reference Range</p>
-                                <p className="text-white/80 text-sm font-medium">{m.range}</p>
+                              <div className="mt-4 pt-3 border-t border-white/10">
+                                <p className="text-[10px] text-white/45 uppercase tracking-[0.12em]">Reference Range</p>
+                                <p className="text-white/85 text-sm font-medium mt-0.5">{m.range}</p>
                               </div>
                             )}
                           </CardContent>
@@ -684,6 +907,7 @@ const LabReportAnalysis = () => {
                       ))}
                     </div>
                   </div>
+
 
                   {/* AI Clinical Analysis — light "report paper" surface for readability */}
                   <Card className="bg-white border border-purple-200/60 rounded-3xl overflow-hidden shadow-[0_18px_50px_-18px_rgba(30,0,61,0.55)] animate-fade-in">
@@ -700,34 +924,68 @@ const LabReportAnalysis = () => {
                     </div>
 
                     <CardContent className="p-6 md:p-8">
-                      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,300px)_1fr] gap-8 lg:gap-10">
+                      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,320px)_1fr] gap-8 lg:gap-12">
                         {/* ── Left: Health Score ─────────────────────────── */}
-                        <div className="flex flex-col items-center text-center lg:border-r lg:border-slate-200 lg:pr-10">
-                          <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 mb-4">
+                        <div className="flex flex-col items-center text-center lg:border-r lg:border-slate-200 lg:pr-12">
+                          <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 mb-5">
                             <HeartPulse className="w-3.5 h-3.5 text-pink-500" />
-                            Health Score
+                            AI Health Score
                           </p>
                           {healthScore !== undefined && healthScore !== null ? (
                             <>
                               <HealthRing score={Number(healthScore)} />
+
+                              {/* Clinical status */}
                               <span
-                                className={`mt-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold transition-transform duration-200 hover:scale-[1.03] ${
+                                className={`mt-5 inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold animate-fade-in transition-transform duration-200 hover:scale-[1.03] ${
                                   toneBadgeOnLight[scoreBand(Number(healthScore)).tone]
                                 }`}
                               >
                                 <StatusDot tone={scoreBand(Number(healthScore)).tone} />
                                 {scoreBand(Number(healthScore)).label}
                               </span>
-                              <p className="mt-3 text-sm text-slate-600 leading-relaxed max-w-[240px]">
+
+                              {/* Change vs previous report */}
+                              <div className="mt-4 w-full max-w-[250px] rounded-2xl bg-slate-50 border border-slate-200 px-4 py-3">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                                  vs previous report
+                                </p>
+                                {scoreDelta === undefined ? (
+                                  <p className="mt-1 text-sm text-slate-500">
+                                    No earlier report to compare yet
+                                  </p>
+                                ) : (
+                                  <p
+                                    className={`mt-1 text-sm font-semibold flex items-center justify-center gap-1.5 ${
+                                      scoreDelta > 0
+                                        ? "text-emerald-700"
+                                        : scoreDelta < 0
+                                        ? "text-red-700"
+                                        : "text-slate-600"
+                                    }`}
+                                  >
+                                    <span aria-hidden="true">
+                                      {scoreDelta > 0 ? "▲" : scoreDelta < 0 ? "▼" : "•"}
+                                    </span>
+                                    {scoreDelta === 0
+                                      ? "No change"
+                                      : `${scoreDelta > 0 ? "+" : ""}${scoreDelta} point${
+                                          Math.abs(scoreDelta) === 1 ? "" : "s"
+                                        }`}
+                                  </p>
+                                )}
+                              </div>
+
+                              <p className="mt-4 text-sm text-slate-600 leading-relaxed max-w-[250px]">
                                 {scoreBand(Number(healthScore)).note}
                               </p>
                             </>
                           ) : (
-                            <div className="flex flex-col items-center gap-2 py-8">
+                            <div className="flex flex-col items-center gap-2 py-10">
                               <span className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center">
                                 <Activity className="w-6 h-6 text-slate-400" />
                               </span>
-                              <p className="text-sm text-slate-500">Score not available</p>
+                              <p className="text-sm text-slate-500">Score not available for this report</p>
                             </div>
                           )}
                         </div>
@@ -735,13 +993,13 @@ const LabReportAnalysis = () => {
                         {/* ── Right: Status → Risk → Interpretation ──────── */}
                         <div className="divide-y divide-slate-200">
                           {/* Overall Status */}
-                          <div className="pb-5">
-                            <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2.5">
+                          <div className="pb-6">
+                            <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3">
                               <Activity className="w-4 h-4 text-purple-600" />
                               Overall Status
                             </h4>
                             <span
-                              className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold transition-transform duration-200 hover:scale-[1.03] ${toneBadgeOnLight[overallTone]}`}
+                              className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold animate-fade-in transition-transform duration-200 hover:scale-[1.03] ${toneBadgeOnLight[overallTone]}`}
                             >
                               <StatusDot tone={overallTone} />
                               {overallStatus}
@@ -749,41 +1007,43 @@ const LabReportAnalysis = () => {
                           </div>
 
                           {/* Risk Level */}
-                          <div className="py-5">
-                            <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2.5">
+                          <div className="py-6">
+                            <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3">
                               <ShieldCheck className="w-4 h-4 text-purple-600" />
                               Risk Level
                             </h4>
                             <span
-                              className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold transition-transform duration-200 hover:scale-[1.03] ${toneBadgeOnLight[riskTone]}`}
+                              className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold animate-fade-in transition-transform duration-200 hover:scale-[1.03] ${toneBadgeOnLight[riskTone]}`}
                             >
                               {riskTone === "red" ? (
                                 <ShieldAlert className="w-4 h-4" />
-                              ) : riskTone === "muted" ? (
+                              ) : riskTone === "orange" ? (
                                 <HelpCircle className="w-4 h-4" />
                               ) : (
                                 <ShieldCheck className="w-4 h-4" />
                               )}
-                              {/(risk)$/i.test(String(riskLevel).trim())
-                                ? String(riskLevel)
-                                : `${riskLevel} Risk`}
+                              {riskLabel}
                             </span>
+                            {!hasUsableRisk && (
+                              <p className="mt-2.5 text-xs text-slate-500 leading-relaxed max-w-md">
+                                Estimated by TIA from your marker results — always confirm with your doctor.
+                              </p>
+                            )}
                           </div>
 
                           {/* AI Interpretation */}
-                          {interpretation && (
-                            <div className="pt-5">
-                              <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2.5">
+                          {interpretationParagraphs.length > 0 && (
+                            <div className="pt-6">
+                              <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3">
                                 <Brain className="w-4 h-4 text-purple-600" />
                                 AI Interpretation
                               </h4>
-                              <div className="rounded-2xl bg-purple-50/70 border border-purple-100 p-4 md:p-5">
-                                <p className="text-[15px] leading-7 text-slate-700">{interpretation}</p>
-                              </div>
+                              <AiInterpretation paragraphs={interpretationParagraphs} />
                             </div>
                           )}
                         </div>
                       </div>
+
 
                       {/* ── Abnormal Markers ─────────────────────────────── */}
                       <div className="mt-8 pt-6 border-t border-slate-200">
@@ -941,15 +1201,17 @@ const LabReportAnalysis = () => {
                   Report History ({reports.length})
                 </h3>
                 <div className="space-y-3">
-                  {reports.map((report) => (
+                  {reports.map((report, i) => (
                     <div
                       key={report.id}
-                      className={`bg-white/[0.03] border rounded-2xl p-4 transition-all duration-300 hover:bg-white/[0.06] ${
+                      style={{ animationDelay: `${i * 60}ms`, animationFillMode: "both" }}
+                      className={`bg-white/[0.03] border rounded-2xl p-4 transition-all duration-300 hover:bg-white/[0.06] hover:-translate-y-0.5 animate-fade-in ${
                         report.id === justAnalyzedId
                           ? "border-pink-400/50 shadow-[0_0_20px_rgba(236,72,153,0.25)]"
                           : "border-white/10"
                       }`}
                     >
+
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2 flex-wrap">

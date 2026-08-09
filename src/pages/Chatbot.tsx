@@ -144,12 +144,7 @@ const Chatbot = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { latestReport } = useLabReports();
-  const [messages, setMessages] = useState<Message[]>([
-    { 
-      role: "assistant", 
-      content: "Hi! I'm TIA, your Thyroid Intelligent Assistant. I have access to your latest lab report and profile, so feel free to ask me anything about your results. How can I help you today?" 
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);

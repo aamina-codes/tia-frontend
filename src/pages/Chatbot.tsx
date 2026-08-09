@@ -456,48 +456,67 @@ const Chatbot = () => {
     const isLastMessage = index === messages.length - 1;
     
     return (
-      <div key={index}>
+      <div key={index} className="animate-fadeIn">
         <div
-          className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} items-start gap-3`}
+          className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} items-end gap-2.5`}
         >
           {message.role === "assistant" && (
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 border border-pink-400/30 flex items-center justify-center">
-              <img src={tiaLogo} alt="TIA" className="w-6 h-6 object-contain" />
+            <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-pink-500/25 to-purple-500/25 border border-pink-400/30 flex items-center justify-center mb-1">
+              <img src={tiaLogo} alt="TIA" className="w-5 h-5 object-contain" />
             </div>
           )}
-          
-          <div 
-            className={`max-w-[70%] rounded-2xl p-4 ${
-              message.role === "user" 
-                ? "bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-400/30" 
-                : "bg-white/5 border border-white/10"
-            }`}
-          >
-            <div className="text-white/90 leading-relaxed whitespace-pre-wrap prose prose-invert prose-sm max-w-none">
-              {message.content.split('\n').map((line, i) => {
-                // Safely render **bold** markdown as React elements (no HTML injection).
-                const parts = line.split(/(\*\*[^*]+\*\*)/g).map((part, j) => {
-                  if (/^\*\*[^*]+\*\*$/.test(part)) {
-                    return <strong key={j}>{part.slice(2, -2)}</strong>;
-                  }
-                  return <span key={j}>{part}</span>;
-                });
-                return (
-                  <p key={i} className="mb-1 last:mb-0">
-                    {parts}
-                  </p>
-                );
-              })}
+
+          <div className={`max-w-[78%] sm:max-w-[70%] ${message.role === "user" ? "items-end" : "items-start"} flex flex-col gap-1.5`}>
+            <div
+              className={`rounded-2xl px-4 py-3 text-[0.95rem] leading-relaxed shadow-sm ${
+                message.role === "user"
+                  ? "bg-gradient-to-br from-pink-500 to-purple-600 text-white rounded-br-md"
+                  : "bg-white/[0.07] border border-white/10 text-white/90 rounded-bl-md backdrop-blur-sm"
+              }`}
+            >
+              <div className="whitespace-pre-wrap">
+                {message.content.split('\n').map((line, i) => {
+                  // Safely render **bold** markdown as React elements (no HTML injection).
+                  const parts = line.split(/(\*\*[^*]+\*\*)/g).map((part, j) => {
+                    if (/^\*\*[^*]+\*\*$/.test(part)) {
+                      return <strong key={j}>{part.slice(2, -2)}</strong>;
+                    }
+                    return <span key={j}>{part}</span>;
+                  });
+                  return (
+                    <p key={i} className="mb-1 last:mb-0">
+                      {parts}
+                    </p>
+                  );
+                })}
+              </div>
             </div>
+
+            {/* Source references */}
+            {message.role === "assistant" && message.sources && message.sources.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 pl-1">
+                <span className="text-[0.7rem] uppercase tracking-wide text-white/40">Based on</span>
+                {message.sources.map((s) => (
+                  <span
+                    key={s}
+                    className="inline-flex items-center gap-1 text-[0.7rem] text-pink-200/90 bg-pink-500/10 border border-pink-400/25 rounded-full px-2 py-0.5"
+                  >
+                    <ShieldCheck className="w-3 h-3" />
+                    {s}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {message.role === "user" && (
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-400/30 flex items-center justify-center">
-              <svg className="w-5 h-5 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-blue-500/25 to-cyan-500/25 border border-blue-400/30 flex items-center justify-center mb-1">
+              <svg className="w-4 h-4 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </div>
           )}
+
         </div>
 
         {/* Quick Replies */}

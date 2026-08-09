@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Send, Loader2, Check, Paperclip } from "lucide-react";
+import { ArrowLeft, Send, Loader2, Check, Paperclip, Activity, FileText, Stethoscope, HeartPulse, Sparkle, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

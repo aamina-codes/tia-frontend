@@ -265,9 +265,10 @@ const Chatbot = () => {
     });
   };
 
-  const handleSendMessage = async () => {
-    if (inputMessage.trim() && !isLoading) {
-      const userMessage = inputMessage;
+  const handleSendMessage = async (override?: string) => {
+    const raw = (override ?? inputMessage).trim();
+    if (raw && !isLoading) {
+      const userMessage = raw;
       setMessages(prev => [...prev, { role: "user", content: userMessage }]);
       setInputMessage("");
 
@@ -315,9 +316,16 @@ const Chatbot = () => {
           return;
         }
 
+        // Source references: which of the user's own records informed this answer
+        const sources: string[] = [];
+        if (userContext.includes('Latest Lab Report')) sources.push('Your latest lab report');
+        if (userContext.includes('Health Tracker')) sources.push('Health tracker entries');
+        if (userContext.includes('Personal info') || userContext.includes('Patient name')) sources.push('Your profile');
+
         setMessages(prev => [...prev, { 
           role: "assistant", 
-          content: data.response
+          content: data.response,
+          sources: sources.length ? sources : undefined
         }]);
       } catch (error) {
         console.error('Chat error:', error);

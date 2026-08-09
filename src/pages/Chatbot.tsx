@@ -114,7 +114,23 @@ interface Message {
   quickReplies?: QuickReply[];
   symptomChecklist?: SymptomCheckbox[];
   condition?: string;
+  sources?: string[];
 }
+
+const QUICK_ACTIONS = [
+  { icon: Activity, label: "Explain my TSH", prompt: "Explain my TSH result in simple terms." },
+  { icon: FileText, label: "Summarize my report", prompt: "Summarize my latest lab report." },
+  { icon: Stethoscope, label: "What should I ask my doctor?", prompt: "What should I ask my doctor at my next appointment?" },
+  { icon: HeartPulse, label: "Lifestyle tips", prompt: "What lifestyle habits support healthy thyroid function?" },
+];
+
+const SUGGESTED_PROMPTS = [
+  "What does a high TSH mean?",
+  "Are my T3 and T4 in range?",
+  "Why do I feel tired all the time?",
+  "How often should I retest?",
+];
+
 
 interface DecisionState {
   active: boolean;

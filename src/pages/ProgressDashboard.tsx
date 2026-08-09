@@ -70,7 +70,7 @@ const ProgressDashboard = () => {
       <TodaysStatusCard variant="full" />
 
       {/* Attention */}
-      <SectionHeading label="Needs attention" />
+      {(latestReport?.redFlags?.length ?? 0) > 0 && <SectionHeading label="Needs attention" />}
       <RedFlagSystem />
 
       {/* AI intelligence */}

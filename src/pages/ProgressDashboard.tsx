@@ -13,6 +13,7 @@ import LifestyleCoaching from "@/components/LifestyleCoaching";
 import PremiumGate from "@/components/PremiumGate";
 import TodaysStatusCard from "@/components/TodaysStatusCard";
 import ProgressOverview from "@/components/dashboard/ProgressOverview";
+import HealthSnapshot from "@/components/HealthSnapshot";
 
 const SectionHeading = ({ label, hint }: { label: string; hint?: string }) => (
   <div className="relative z-10 px-6 pt-4 pb-3">

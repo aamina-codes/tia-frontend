@@ -63,6 +63,9 @@ const ProgressDashboard = () => {
         </div>
       </section>
 
+      {/* Today's Health Snapshot */}
+      <HealthSnapshot />
+
       {/* Overview: KPIs, score trend, adherence, symptoms, reminders */}
       <ProgressOverview />
 

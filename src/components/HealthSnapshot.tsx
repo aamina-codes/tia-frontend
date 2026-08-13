@@ -15,7 +15,7 @@ interface ReminderRow {
   reminder_time: string | null;
 }
 
-const statusPenalty = (s?: string) => {
+const statusPenalty = (s?: string): number | null => {
   const v = (s ?? "").toLowerCase();
   if (!v || v === "unknown") return null;
   if (v === "normal") return 0;

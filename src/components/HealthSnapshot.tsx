@@ -250,7 +250,7 @@ const HealthSnapshot = () => {
                   </div>
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => navigate("/lab-report-analysis")}
+                      onClick={() => navigate("/lab-report")}
                       className="rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white"
                     >
                       <Droplets className="w-4 h-4 mr-2" /> View report

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Activity, CalendarClock, Droplets, FlaskConical, Pill, Sparkles, Sun, Sunrise, Moon,
+  HeartPulse, ShieldCheck, ShieldAlert, HelpCircle, Brain, ChevronRight,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,8 @@ interface ReminderRow {
   reminder_time: string | null;
 }
 
+type Tone = "green" | "yellow" | "orange" | "red" | "blue" | "muted";
+
 const statusPenalty = (s?: string): number | null => {
   const v = (s ?? "").toLowerCase();
   if (!v || v === "unknown") return null;
@@ -25,13 +28,63 @@ const statusPenalty = (s?: string): number | null => {
   return 8;
 };
 
-const toneFor = (score: number | null) => {
-  if (score === null) return { label: "No data yet", dot: "bg-white/40", text: "text-white/70", ring: "from-white/30 to-white/10" };
-  if (score >= 85) return { label: "Stable", dot: "bg-emerald-400", text: "text-emerald-300", ring: "from-emerald-400 to-teal-400" };
-  if (score >= 70) return { label: "Mostly stable", dot: "bg-amber-300", text: "text-amber-200", ring: "from-amber-300 to-pink-400" };
-  if (score >= 50) return { label: "Needs monitoring", dot: "bg-orange-400", text: "text-orange-300", ring: "from-orange-400 to-pink-500" };
-  return { label: "Needs attention", dot: "bg-rose-500", text: "text-rose-300", ring: "from-rose-500 to-fuchsia-600" };
+const scoreBand = (score: number | null) => {
+  if (score === null) {
+    return { label: "No data yet", tone: "muted" as Tone, note: "Upload a lab report so TIA can personalise your daily guidance." };
+  }
+  const clamped = Math.max(0, Math.min(100, Math.round(score)));
+  if (clamped >= 90) {
+    return { label: "Stable", tone: "green" as Tone, note: "Your thyroid profile looks excellent." };
+  }
+  if (clamped >= 70) {
+    return { label: "Mostly stable", tone: "green" as Tone, note: "Your thyroid profile looks stable." };
+  }
+  if (clamped >= 50) {
+    return { label: "Needs monitoring", tone: "orange" as Tone, note: "Some markers need closer monitoring." };
+  }
+  return { label: "Needs attention", tone: "red" as Tone, note: "Several markers need medical attention." };
 };
+
+// ── Light-surface styling maps matching the AI Clinical Analysis card ──
+const toneTextOnLight: Record<Tone, string> = {
+  green: "text-emerald-700",
+  yellow: "text-amber-700",
+  orange: "text-orange-700",
+  red: "text-red-700",
+  blue: "text-sky-700",
+  muted: "text-slate-500",
+};
+
+const toneBadgeOnLight: Record<Tone, string> = {
+  green: "bg-emerald-50 text-emerald-800 border border-emerald-300",
+  yellow: "bg-amber-50 text-amber-800 border border-amber-300",
+  orange: "bg-orange-50 text-orange-800 border border-orange-300",
+  red: "bg-red-50 text-red-800 border border-red-300",
+  blue: "bg-sky-50 text-sky-800 border border-sky-300",
+  muted: "bg-slate-100 text-slate-700 border border-slate-300",
+};
+
+const toneDotOnLight: Record<Tone, string> = {
+  green: "bg-emerald-500",
+  yellow: "bg-amber-500",
+  orange: "bg-orange-500",
+  red: "bg-red-500",
+  blue: "bg-sky-500",
+  muted: "bg-slate-400",
+};
+
+const toneStroke: Record<Tone, string> = {
+  green: "#059669",
+  yellow: "#d97706",
+  orange: "#ea580c",
+  red: "#dc2626",
+  blue: "#0284c7",
+  muted: "#94a3b8",
+};
+
+const StatusDot = ({ tone }: { tone: Tone }) => (
+  <span className={`w-2 h-2 rounded-full shrink-0 ${toneDotOnLight[tone]}`} />
+);
 
 const greeting = () => {
   const h = new Date().getHours();
@@ -52,6 +105,34 @@ const daysUntil = (date: string) => {
   const now = new Date(); now.setHours(0, 0, 0, 0);
   const target = new Date(date); target.setHours(0, 0, 0, 0);
   return Math.round((target.getTime() - now.getTime()) / 86400000);
+};
+
+// Circular progress ring for the health score.
+const HealthRing = ({ score, shown }: { score: number; shown: number }) => {
+  const { tone } = scoreBand(score);
+  const R = 42;
+  const C = 2 * Math.PI * R;
+  const offset = C - (shown / 100) * C;
+  return (
+    <div className="relative w-28 h-28 flex-shrink-0">
+      <svg className="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r={R} fill="none" strokeWidth="8" stroke="#e9edf3" />
+        <circle
+          cx="50" cy="50" r={R} fill="none" strokeWidth="8" strokeLinecap="round"
+          stroke={toneStroke[tone]}
+          strokeDasharray={C}
+          strokeDashoffset={offset}
+          style={{ transition: "stroke-dashoffset 0.2s linear" }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-3xl font-semibold text-slate-900 leading-none">
+          {score === null ? "--" : shown}
+        </span>
+        <span className="text-[10px] uppercase tracking-widest text-slate-400 mt-1">/ 100</span>
+      </div>
+    </div>
+  );
 };
 
 const HealthSnapshot = () => {
@@ -107,7 +188,7 @@ const HealthSnapshot = () => {
     return () => clearInterval(id);
   }, [score]);
 
-  const tone = toneFor(score);
+  const band = scoreBand(score);
   const { text: greetText, Icon: GreetIcon } = greeting();
 
   const nextMedication = useMemo(
@@ -126,6 +207,15 @@ const HealthSnapshot = () => {
     ? latestReport.tshStatus
     : null;
 
+  const tshTone: Tone = useMemo(() => {
+    const s = (tshStatus || "").toLowerCase();
+    if (s.includes("normal") || s.includes("stable")) return "green";
+    if (s.includes("borderline") || s.includes("mild")) return "yellow";
+    if (s.includes("low")) return "blue";
+    if (s.includes("high") || s.includes("elevated") || s.includes("very")) return "red";
+    return "muted";
+  }, [tshStatus]);
+
   const tip = useMemo(() => {
     if (score === null) return "Upload a lab report so TIA can personalise your daily guidance.";
     if (score >= 85) return "Stay hydrated and keep your current routine — consistency is what's working.";
@@ -134,91 +224,94 @@ const HealthSnapshot = () => {
     return "Share your latest report with your doctor and keep logging symptoms until you're reviewed.";
   }, [score]);
 
-  const circumference = 2 * Math.PI * 42;
-
   return (
     <section className="relative z-10 px-6 pb-6">
       <div className="max-w-6xl mx-auto animate-fadeIn">
-        <Card className="bg-gradient-to-br from-pink-500/10 via-purple-500/10 to-transparent backdrop-blur-sm border border-pink-400/30 hover:border-pink-400/60 transition-all duration-300">
-          <CardContent className="p-7">
-            <div className="flex flex-col lg:flex-row lg:items-center gap-7">
-              {/* Score ring */}
-              <div className="flex items-center gap-5">
-                <div className="relative w-28 h-28 flex-shrink-0">
-                  <svg className="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r="42" fill="none" strokeWidth="8" className="stroke-white/10" />
-                    <circle
-                      cx="50" cy="50" r="42" fill="none" strokeWidth="8" strokeLinecap="round"
-                      stroke="url(#snapshotGrad)"
-                      strokeDasharray={circumference}
-                      strokeDashoffset={circumference - (circumference * shownScore) / 100}
-                      style={{ transition: "stroke-dashoffset 0.2s linear" }}
-                    />
-                    <defs>
-                      <linearGradient id="snapshotGrad" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" className="[stop-color:hsl(330_80%_65%)]" />
-                        <stop offset="100%" className="[stop-color:hsl(280_80%_65%)]" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-3xl font-semibold text-white leading-none">
-                      {score === null ? "--" : shownScore}
-                    </span>
-                    <span className="text-[10px] uppercase tracking-widest text-white/45 mt-1">/ 100</span>
-                  </div>
-                </div>
+        <Card className="bg-white border border-purple-200/60 rounded-3xl overflow-hidden shadow-[0_18px_50px_-18px_rgba(30,0,61,0.55)]">
+          {/* Gradient header */}
+          <div className="bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 px-6 py-5 flex flex-wrap items-center gap-3">
+            <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm">
+              <HeartPulse className="w-5 h-5 text-white" />
+            </div>
+            <h3 className="text-lg md:text-xl font-bold text-white">Today's Health Snapshot</h3>
+            <span className="ml-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 border border-white/30 text-white text-[11px] font-semibold backdrop-blur-sm">
+              <Sparkles className="w-3 h-3" />
+              Personalised for you
+            </span>
+          </div>
 
-                <div className="lg:hidden">
-                  <p className="text-white/60 text-sm flex items-center gap-2">
-                    <GreetIcon className="w-4 h-4 text-pink-300" />
-                    {greetText}{name ? `, ${name}` : ""}
-                  </p>
-                </div>
+          <CardContent className="p-6 md:p-8">
+            <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+              {/* Left: score ring */}
+              <div className="flex flex-col items-center text-center lg:border-r lg:border-slate-200 lg:pr-12">
+                <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 mb-5">
+                  <Activity className="w-3.5 h-3.5 text-pink-500" />
+                  AI Health Score
+                </p>
+                <HealthRing score={score ?? 0} shown={shownScore} />
+
+                <span
+                  className={`mt-5 inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold animate-fade-in transition-transform duration-200 hover:scale-[1.03] ${toneBadgeOnLight[band.tone]}`}
+                >
+                  <StatusDot tone={band.tone} />
+                  {band.label}
+                </span>
+
+                <p className="mt-4 text-sm text-slate-600 leading-relaxed max-w-[250px]">
+                  {band.note}
+                </p>
               </div>
 
-              {/* Content */}
+              {/* Right: content */}
               <div className="flex-1 min-w-0">
-                <p className="hidden lg:flex items-center gap-2 text-white/60 text-sm">
-                  <GreetIcon className="w-4 h-4 text-pink-300" />
+                <p className="flex items-center gap-2 text-slate-500 text-sm">
+                  <GreetIcon className="w-4 h-4 text-pink-500" />
                   {greetText}{name ? `, ${name}` : ""}
                 </p>
-                <h2 className="text-2xl md:text-3xl font-semibold text-white mt-1 tracking-tight">
-                  Today's Health Snapshot
+                <h2 className="text-2xl md:text-3xl font-semibold text-slate-900 mt-1 tracking-tight">
+                  Your thyroid profile is {band.label.toLowerCase()} today.
                 </h2>
-                <p className={`mt-1 text-sm flex items-center gap-2 ${tone.text}`}>
-                  <span className={`w-2 h-2 rounded-full ${tone.dot}`} />
+                <p className={`mt-1 text-sm flex items-center gap-2 ${toneTextOnLight[band.tone]}`}>
+                  <StatusDot tone={band.tone} />
                   {score === null
                     ? "No lab data yet — upload a report to see your status."
-                    : `Your thyroid profile is ${tone.label.toLowerCase()} today.`}
+                    : band.note}
                 </p>
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3">
-                    <p className="text-[11px] uppercase tracking-wider text-white/40 flex items-center gap-1.5">
-                      <Activity className="w-3.5 h-3.5 text-pink-300" /> Health score
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+                    <p className="text-[11px] uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                      <Activity className="w-3.5 h-3.5 text-pink-500" /> Health score
                     </p>
-                    <p className="text-white font-semibold mt-1">
+                    <p className="text-slate-900 font-semibold mt-1">
                       {score === null ? "Not available" : `${score}/100`}
-                      {score !== null && <span className={`ml-2 text-xs font-normal ${tone.text}`}>{tone.label}</span>}
+                      {score !== null && (
+                        <span className={`ml-2 text-xs font-normal ${toneTextOnLight[band.tone]}`}>
+                          {band.label}
+                        </span>
+                      )}
                     </p>
                   </div>
 
-                  <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3">
-                    <p className="text-[11px] uppercase tracking-wider text-white/40 flex items-center gap-1.5">
-                      <FlaskConical className="w-3.5 h-3.5 text-purple-300" /> TSH
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+                    <p className="text-[11px] uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                      <FlaskConical className="w-3.5 h-3.5 text-purple-600" /> TSH
                     </p>
-                    <p className="text-white font-semibold mt-1">
+                    <p className="text-slate-900 font-semibold mt-1">
                       {latestReport?.tsh != null ? `${latestReport.tsh} mIU/L` : "No reading"}
-                      {tshStatus && <span className="ml-2 text-xs font-normal text-white/60 capitalize">{tshStatus}</span>}
+                      {tshStatus && (
+                        <span className={`ml-2 text-xs font-normal capitalize ${toneTextOnLight[tshTone]}`}>
+                          {tshStatus}
+                        </span>
+                      )}
                     </p>
                   </div>
 
-                  <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3">
-                    <p className="text-[11px] uppercase tracking-wider text-white/40 flex items-center gap-1.5">
-                      <Pill className="w-3.5 h-3.5 text-pink-300" /> Next medication
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+                    <p className="text-[11px] uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                      <Pill className="w-3.5 h-3.5 text-pink-500" /> Next medication
                     </p>
-                    <p className="text-white font-semibold mt-1">
+                    <p className="text-slate-900 font-semibold mt-1">
                       {nextMedication
                         ? formatTime(nextMedication.reminder_time) ??
                           new Date(nextMedication.reminder_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
@@ -226,11 +319,11 @@ const HealthSnapshot = () => {
                     </p>
                   </div>
 
-                  <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3">
-                    <p className="text-[11px] uppercase tracking-wider text-white/40 flex items-center gap-1.5">
-                      <CalendarClock className="w-3.5 h-3.5 text-purple-300" /> Next lab test
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+                    <p className="text-[11px] uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                      <CalendarClock className="w-3.5 h-3.5 text-purple-600" /> Next lab test
                     </p>
-                    <p className="text-white font-semibold mt-1">
+                    <p className="text-slate-900 font-semibold mt-1">
                       {nextLabTest
                         ? (() => {
                             const d = daysUntil(nextLabTest.reminder_date);
@@ -242,10 +335,10 @@ const HealthSnapshot = () => {
                 </div>
 
                 <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-4">
-                  <div className="flex items-start gap-2.5 bg-gradient-to-r from-pink-500/15 to-purple-500/10 border border-pink-400/25 rounded-xl px-4 py-3 flex-1">
-                    <Sparkles className="w-4 h-4 text-pink-300 mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-white/85">
-                      <span className="text-white/50">AI tip — </span>{tip}
+                  <div className="flex items-start gap-2.5 bg-purple-50/70 border border-purple-100 rounded-xl px-4 py-3 flex-1">
+                    <Sparkles className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-slate-700">
+                      <span className="text-slate-500">AI tip — </span>{tip}
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -258,7 +351,7 @@ const HealthSnapshot = () => {
                     <Button
                       variant="ghost"
                       onClick={() => navigate("/reminders")}
-                      className="rounded-full text-white/75 hover:text-white hover:bg-white/10 border border-white/10"
+                      className="rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200"
                     >
                       Reminders
                     </Button>

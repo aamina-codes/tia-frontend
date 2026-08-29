@@ -104,7 +104,7 @@ Compare extracted values against relevant reference information.
 **4. Personalized Insights**  
 Present the resulting analysis in a clearer and more understandable format.
 
-![How TIA Works](src/assets/screenshots/how-tia-works.png)
+![How TIA Works](src/assets/screenshots/how-it-works.png)
 
 ---
 

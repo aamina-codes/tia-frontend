@@ -61,7 +61,7 @@ The landing page introduces TIA and establishes the product's visual identity.
 
 It focuses on making healthcare technology feel approachable from the very first interaction.
 
-![TIA Landing Page](assets/screenshots/landing-page.png)
+![TIA Landing Page](src/assets/screenshots/landing-page.png)
 
 ---
 
@@ -69,7 +69,7 @@ It focuses on making healthcare technology feel approachable from the very first
 
 The About section introduces TIA's purpose and explains how the platform aims to bridge the gap between patients and healthcare providers.
 
-![About TIA](assets/screenshots/about-tia.png)
+![About TIA](src/assets/screenshots/about-tia.png)
 
 ---
 
@@ -84,7 +84,7 @@ The feature page provides an overview of the major capabilities available within
 - Progress Dashboard
 - Doctor Connect
 
-![TIA Features](assets/screenshots/features.png)
+![TIA Features](src/assets/screenshots/features.png)
 
 ---
 
@@ -104,7 +104,7 @@ Compare extracted values against relevant reference information.
 **4. Personalized Insights**  
 Present the resulting analysis in a clearer and more understandable format.
 
-![How TIA Works](assets/screenshots/how-tia-works.png)
+![How TIA Works](src/assets/screenshots/how-tia-works.png)
 
 ---
 
@@ -112,7 +112,7 @@ Present the resulting analysis in a clearer and more understandable format.
 
 The sign-in experience provides the entry point into the TIA platform while maintaining the same visual identity and design language used throughout the product.
 
-![TIA Sign In](assets/screenshots/sign-in.png)
+![TIA Sign In](src/assets/screenshots/sign-in.png)
 
 ---
 

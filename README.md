@@ -45,26 +45,6 @@ Present insights and health information around the individual's journey.
 
 ---
 
-## Product Preview
-
-TIA is designed around a simple journey:
-
-**Upload → Extract → Interpret → Understand**
-
-The interface follows a consistent visual language throughout the product, using a calm purple and pink palette with the butterfly identity representing TIA.
-
----
-
-## Landing Experience
-
-The landing page introduces TIA and establishes the product's visual identity.
-
-It focuses on making healthcare technology feel approachable from the very first interaction.
-
-![TIA Landing Page](src/assets/screenshots/landing-page.png)
-
----
-
 ## About TIA
 
 The About section introduces TIA's purpose and explains how the platform aims to bridge the gap between patients and healthcare providers.
@@ -156,60 +136,30 @@ The goal is to help users **understand their information better and have more in
 
 ---
 
-## Frontend Architecture
-
-```text
-TIA Frontend
-│
-├── components/
-│   └── Reusable UI components
-│
-├── pages/
-│   └── Application screens
-│
-├── hooks/
-│   └── Reusable React logic
-│
-├── services/
-│   └── API communication
-│
-├── assets/
-│   └── Images, icons and visual assets
-│
-├── styles/
-│   └── Global styling
-│
-└── App.tsx
-
-```
-
----
-
 ## Project Structure
 
 ```text
+
 tia-frontend/
 │
 ├── public/
 │
 ├── src/
-│   ├── components/
-│   ├── pages/
-│   ├── hooks/
-│   ├── services/
 │   ├── assets/
-│   ├── styles/
-│   └── App.tsx
-│
-├── screenshots/
-│   ├── landing-page.png
-│   ├── about-tia.png
-│   ├── features.png
-│   ├── how-tia-works.png
-│   └── sign-in.png
+│   │   └── screenshots/
+│   │
+│   ├── components/
+│   │   ├── dashboard/
+│   │   ├── health/
+│   │   ├── ui/
+│   │   └── ...
+│   │
+│   ├── App.tsx
+│   └── ...
 │
 ├── package.json
 ├── vite.config.ts
+├── tsconfig.json
 └── README.md
 
 ```
@@ -218,17 +168,17 @@ tia-frontend/
 
 ## Roadmap
 
-TIA is an evolving project, with future improvements focused on expanding the platform and making the experience more useful, accessible, and connected.
+TIA is an evolving project, with future improvements focused on expanding the platform and strengthening the patient experience.
 
-- Authentication improvements
-- Patient profiles
-- Doctor dashboard
-- Enhanced report history
-- Notifications and reminders
+- Enhanced patient profiles
+- Dedicated doctor dashboard
+- Advanced report history and comparisons
+- Improved notification and reminder workflows
 - Further mobile optimization
-- Expanded health visualizations
+- Expanded health trend visualizations
+- Enhanced patient–doctor collaboration
+- Continued AI and NLP improvements
 - Continued UI/UX refinement
-- Deeper patient–doctor collaboration
 
 ---
 
@@ -244,9 +194,9 @@ Users should consult a qualified healthcare professional for medical decisions o
 
 ## Data & Privacy
 
-TIA is designed with healthcare data sensitivity in mind.
+TIA is designed with the sensitivity of healthcare information in mind.
 
-The project aims to handle health information responsibly and incorporate appropriate security considerations throughout the application.
+The application incorporates security and privacy considerations throughout the frontend and backend architecture. Health information should be handled responsibly and users should be informed about how their data is processed and stored.
 
 ---
 
@@ -256,5 +206,4 @@ Active Development
 
 TIA is an evolving project that brings together:
 
-`AI` → `OCR` → `Data Extraction` → `Validation` → `Analysis` → `APIs` → `Database` → `UI` → `Product Design`
-
+**AI → OCR → Data Extraction → Validation → Analysis → APIs → Database → UI → Product Design**

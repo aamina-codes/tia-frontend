@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
 
   const loadProfile = useCallback(async (userId: string) => {
     setProfileLoading(true);
@@ -57,6 +57,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setTimeout(() => loadProfile(nextSession.user.id), 0);
       } else {
         setProfile(null);
+        setProfileLoading(false);
       }
     });
 
@@ -65,6 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(existing?.user ?? null);
       setLoading(false);
       if (existing?.user) loadProfile(existing.user.id);
+      else setProfileLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -79,6 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setSession(null);
     setUser(null);
     setProfile(null);
+    setProfileLoading(false);
   }, []);
 
   return (

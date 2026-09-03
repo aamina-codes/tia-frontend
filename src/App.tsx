@@ -14,6 +14,9 @@ import ProgressDashboard from "./pages/ProgressDashboard";
 import DoctorConnect from "./pages/DoctorConnect";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
+import Onboarding from "./pages/Onboarding";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { AuthProvider } from "./contexts/AuthContext";
 
 import Profile from "./pages/Profile";
 import About from "./pages/About";
@@ -27,27 +30,30 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <AuthProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<SplashScreen />} />
           <Route path="/home" element={<HomePage />} />
-          <Route path="/explore" element={<ExploreFeatures />} />
-          <Route path="/lab-report" element={<LabReportAnalysis />} />
-          <Route path="/health-tracker" element={<HealthTracker />} />
-          <Route path="/chatbot" element={<Chatbot />} />
-          <Route path="/reminders" element={<Reminders />} />
-          <Route path="/progress" element={<ProgressDashboard />} />
-          <Route path="/doctor-connect" element={<DoctorConnect />} />
+          <Route path="/explore" element={<ProtectedRoute><ExploreFeatures /></ProtectedRoute>} />
+          <Route path="/lab-report" element={<ProtectedRoute><LabReportAnalysis /></ProtectedRoute>} />
+          <Route path="/health-tracker" element={<ProtectedRoute><HealthTracker /></ProtectedRoute>} />
+          <Route path="/chatbot" element={<ProtectedRoute><Chatbot /></ProtectedRoute>} />
+          <Route path="/reminders" element={<ProtectedRoute><Reminders /></ProtectedRoute>} />
+          <Route path="/progress" element={<ProtectedRoute><ProgressDashboard /></ProtectedRoute>} />
+          <Route path="/doctor-connect" element={<ProtectedRoute><DoctorConnect /></ProtectedRoute>} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/onboarding" element={<ProtectedRoute requireOnboarding={false}><Onboarding /></ProtectedRoute>} />
 
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/about" element={<About />} />
           <Route path="/pricing" element={<Pricing />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

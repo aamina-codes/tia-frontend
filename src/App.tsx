@@ -39,6 +39,8 @@ const App = () => (
           <Route path="/progress" element={<ProgressDashboard />} />
           <Route path="/doctor-connect" element={<DoctorConnect />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+
           <Route path="/profile" element={<Profile />} />
           <Route path="/about" element={<About />} />
           <Route path="/pricing" element={<Pricing />} />

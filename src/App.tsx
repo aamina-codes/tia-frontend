@@ -13,6 +13,8 @@ import Reminders from "./pages/Reminders";
 import ProgressDashboard from "./pages/ProgressDashboard";
 import DoctorConnect from "./pages/DoctorConnect";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
+
 import Profile from "./pages/Profile";
 import About from "./pages/About";
 import Pricing from "./pages/Pricing";
@@ -37,6 +39,8 @@ const App = () => (
           <Route path="/progress" element={<ProgressDashboard />} />
           <Route path="/doctor-connect" element={<DoctorConnect />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+
           <Route path="/profile" element={<Profile />} />
           <Route path="/about" element={<About />} />
           <Route path="/pricing" element={<Pricing />} />

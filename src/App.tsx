@@ -13,6 +13,8 @@ import Reminders from "./pages/Reminders";
 import ProgressDashboard from "./pages/ProgressDashboard";
 import DoctorConnect from "./pages/DoctorConnect";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
+
 import Profile from "./pages/Profile";
 import About from "./pages/About";
 import Pricing from "./pages/Pricing";

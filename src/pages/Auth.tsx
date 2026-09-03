@@ -267,9 +267,15 @@ const Auth = () => {
                       Remember me
                     </label>
                   </div>
-                  <button type="button" className="text-sm text-white/80 hover:text-white transition-colors">
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={isLoading}
+                    className="text-sm text-white/80 hover:text-white transition-colors disabled:opacity-50"
+                  >
                     Forgot password?
                   </button>
+
                 </div>
               )}
 

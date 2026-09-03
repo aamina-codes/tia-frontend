@@ -42,9 +42,6 @@ const ProtectedRoute = ({ children, requireOnboarding = true }: Props) => {
     return <Navigate to="/explore" replace />;
   }
 
-    return <Navigate to="/explore" replace />;
-  }
-
   return <>{children}</>;
 };
 

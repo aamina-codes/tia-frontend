@@ -32,13 +32,16 @@ const ProtectedRoute = ({ children, requireOnboarding = true }: Props) => {
     return <Navigate to="/auth" replace state={{ from: location.pathname }} />;
   }
 
-  if (profileLoading || profile === null) return <LoadingScreen />;
+  if (profileLoading) return <LoadingScreen />;
 
-  if (requireOnboarding && !profile.onboarding_completed) {
+  if (requireOnboarding && !profile?.onboarding_completed) {
     return <Navigate to="/onboarding" replace />;
   }
 
-  if (!requireOnboarding && profile.onboarding_completed) {
+  if (!requireOnboarding && profile?.onboarding_completed) {
+    return <Navigate to="/explore" replace />;
+  }
+
     return <Navigate to="/explore" replace />;
   }
 

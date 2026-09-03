@@ -17,14 +17,36 @@ const Auth = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const friendlyError = (error: any) => {
+    const msg = String(error?.message || "Something went wrong");
+    const lower = msg.toLowerCase();
+    if (lower.includes("invalid login credentials")) {
+      return "Incorrect email or password. Please try again.";
+    }
+    if (lower.includes("email not confirmed") || lower.includes("not confirmed")) {
+      return "Please confirm your email first — check your inbox for the confirmation link.";
+    }
+    if (lower.includes("rate limit") || lower.includes("too many") || error?.status === 429) {
+      return "Too many attempts. Please wait a minute and try again.";
+    }
+    if (lower.includes("user already registered")) {
+      return "An account with this email already exists. Try logging in instead.";
+    }
+    if (lower.includes("password") && lower.includes("6")) {
+      return "Password must be at least 6 characters long.";
+    }
+    return msg;
+  };
+
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    const cleanEmail = email.trim().toLowerCase();
 
     try {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({
-          email,
+          email: cleanEmail,
           password,
         });
 
@@ -36,18 +58,28 @@ const Auth = () => {
         });
         navigate("/explore");
       } else {
-        const { error } = await supabase.auth.signUp({
-          email,
+        const { data, error } = await supabase.auth.signUp({
+          email: cleanEmail,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/explore`,
             data: {
-              full_name: fullName,
+              full_name: fullName.trim(),
             },
           },
         });
 
         if (error) throw error;
+
+        if (!data.session) {
+          toast({
+            title: "Confirm your email",
+            description: `We sent a confirmation link to ${cleanEmail}. Please click it to activate your account.`,
+          });
+          setIsLogin(true);
+          setPassword("");
+          return;
+        }
 
         toast({
           title: "🦋 Account created!",
@@ -58,7 +90,40 @@ const Auth = () => {
     } catch (error: any) {
       toast({
         title: "Authentication failed",
-        description: error.message,
+        description: friendlyError(error),
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) {
+      toast({
+        title: "Enter your email",
+        description: "Type your email address above, then tap Forgot password again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+
+      toast({
+        title: "Reset link sent",
+        description: `Check ${cleanEmail} for a link to set a new password.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Couldn't send reset link",
+        description: friendlyError(error),
         variant: "destructive",
       });
     } finally {
@@ -80,12 +145,13 @@ const Auth = () => {
     } catch (error: any) {
       toast({
         title: "Authentication failed",
-        description: error.message,
+        description: friendlyError(error),
         variant: "destructive",
       });
       setIsLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center p-8" style={{ backgroundColor: '#1E003D' }}>

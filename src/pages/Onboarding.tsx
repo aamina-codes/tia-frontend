@@ -143,7 +143,8 @@ const Onboarding = () => {
     setSaving(false);
     if (!ok) return;
 
-    if (isFinalData) await refreshProfile();
+    // Note: profile is refreshed only when the user leaves the completion
+    // screen, so ProtectedRoute doesn't redirect away from it.
     setStep((s) => s + 1);
   };
 
@@ -364,7 +365,10 @@ const Onboarding = () => {
               </p>
               <Button
                 type="button"
-                onClick={() => navigate("/explore", { replace: true })}
+                onClick={async () => {
+                  await refreshProfile();
+                  navigate("/explore", { replace: true });
+                }}
                 className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-full py-6 shadow-[0_0_30px_rgba(236,72,153,0.4)] transition-all"
               >
                 Enter TIA

@@ -1,9 +1,20 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Info, User, LogOut, Edit2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import {
+  Home,
+  FileText,
+  BarChart3,
+  MessageCircle,
+  User,
+  Menu,
+  CalendarCheck,
+  Stethoscope,
+  Settings,
+  Info,
+  LifeBuoy,
+  LogOut,
+  Activity,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,238 +23,167 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import tiaLogo from "@/assets/tia-butterfly-logo.png";
+import { cn } from "@/lib/utils";
+
+const primaryItems = [
+  { label: "Home", to: "/home", icon: Home, match: ["/home", "/explore"] },
+  { label: "Reports", to: "/reports", icon: FileText, match: ["/reports", "/lab-report"] },
+  { label: "Progress", to: "/progress", icon: BarChart3, match: ["/progress"] },
+  { label: "Ask TIA", to: "/assistant", icon: MessageCircle, match: ["/assistant", "/chatbot"] },
+  { label: "Profile", to: "/profile", icon: User, match: ["/profile"] },
+];
+
+const secondaryItems = [
+  { label: "My Care Plan", to: "/care-plan", icon: CalendarCheck },
+  { label: "Health Tracker", to: "/health-tracker", icon: Activity },
+  { label: "Doctor Connect", to: "/doctor-connect", icon: Stethoscope },
+  { label: "Settings", to: "/settings", icon: Settings },
+  { label: "About TIA", to: "/about", icon: Info },
+  { label: "Help & Safety", to: "/help", icon: LifeBuoy },
+];
 
 const Navigation = () => {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const { user, profile, signOut } = useAuth();
   const { toast } = useToast();
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
-  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({
-    full_name: "",
-    email: "",
-  });
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
-        setProfile(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-    
-    if (data) {
-      setProfile(data);
-      setEditForm({
-        full_name: data.full_name || "",
-        email: data.email || "",
-      });
-    }
-  };
-
-  const handleSaveProfile = async () => {
-    if (!user) return;
-
-    setIsEditing(false);
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        full_name: editForm.full_name,
-        email: editForm.email,
-      })
-      .eq('user_id', user.id);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update profile",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    toast({
-      title: "🦋 Profile updated!",
-      description: "Your information has been saved",
-    });
-
-    fetchProfile(user.id);
-  };
+  const isActive = (match: string[]) => match.some((m) => pathname.startsWith(m));
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    toast({
-      title: "Signed out",
-      description: "You've been successfully signed out",
-    });
-    navigate("/");
+    await signOut();
+    toast({ title: "Signed out", description: "You've been successfully signed out" });
+    navigate("/auth");
   };
 
   return (
-    <nav className="fixed top-0 right-0 p-6 z-50">
-      <div className="flex items-center gap-3">
-        <Button 
-          variant="ghost" 
-          size="sm"
-          onClick={() => navigate("/about")}
-          className="text-muted-foreground hover:text-foreground hover:bg-card/80 rounded-full backdrop-blur-sm"
-        >
-          <Info className="w-4 h-4 mr-2" />
-          About
-        </Button>
-        
-        {user ? (
-          <>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  className="text-muted-foreground hover:text-foreground hover:bg-card/80 rounded-full backdrop-blur-sm"
-                >
-                  <User className="w-4 h-4 mr-2" />
-                  Profile
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-card/95 backdrop-blur-sm border-white/10">
-                <DropdownMenuLabel>
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium text-foreground">
-                      {profile?.full_name || "User"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-white/10" />
-                <DropdownMenuItem 
-                  onClick={() => navigate('/profile')}
-                  className="text-muted-foreground hover:text-foreground cursor-pointer"
-                >
-                  <Edit2 className="w-4 h-4 mr-2" />
-                  View Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={handleSignOut}
-                  className="text-muted-foreground hover:text-foreground cursor-pointer"
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Profile Edit Dialog */}
-            <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
-              <DialogContent className="bg-card/95 backdrop-blur-sm border-white/10 text-foreground">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl font-bold">Your Profile</DialogTitle>
-                  <DialogDescription className="text-muted-foreground">
-                    Update your profile information
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="full_name" className="text-foreground">Full Name</Label>
-                    <Input
-                      id="full_name"
-                      value={isEditing ? editForm.full_name : (profile?.full_name || "")}
-                      onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
-                      disabled={!isEditing}
-                      className="bg-white/10 border-white/20 text-foreground disabled:opacity-70"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-foreground">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={isEditing ? editForm.email : (profile?.email || user.email)}
-                      onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                      disabled={!isEditing}
-                      className="bg-white/10 border-white/20 text-foreground disabled:opacity-70"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-3">
-                  {isEditing ? (
-                    <>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setIsEditing(false);
-                          setEditForm({
-                            full_name: profile?.full_name || "",
-                            email: profile?.email || "",
-                          });
-                        }}
-                        className="bg-transparent border-white/20 text-foreground hover:bg-white/10"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handleSaveProfile}
-                        className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white"
-                      >
-                        Save Changes
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      onClick={() => setIsEditing(true)}
-                      className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white"
-                    >
-                      <Edit2 className="w-4 h-4 mr-2" />
-                      Edit Profile
-                    </Button>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
-          </>
-        ) : (
-          <Button 
-            size="sm"
-            onClick={() => navigate("/auth")}
-            className="bg-primary hover:bg-primary-hover text-primary-foreground rounded-full shadow-soft transition-smooth"
+    <>
+      {/* Top bar */}
+      <nav className="fixed top-0 inset-x-0 z-50 border-b border-white/10 bg-[#1E003D]/80 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto h-16 px-4 md:px-6 flex items-center justify-between gap-4">
+          <button
+            onClick={() => navigate(user ? "/home" : "/")}
+            className="flex items-center gap-2 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-400"
+            aria-label="TIA home"
           >
-            <User className="w-4 h-4 mr-2" />
-            Sign In
-          </Button>
-        )}
-      </div>
-    </nav>
+            <img src={tiaLogo} alt="TIA butterfly logo" className="w-8 h-8" />
+            <span className="text-white font-semibold tracking-wide hidden sm:inline">TIA</span>
+          </button>
+
+          {user && (
+            <div className="hidden md:flex items-center gap-1">
+              {primaryItems.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  aria-current={isActive(item.match) ? "page" : undefined}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-400",
+                    isActive(item.match)
+                      ? "bg-white/15 text-white font-medium"
+                      : "text-white/65 hover:text-white hover:bg-white/10"
+                  )}
+                >
+                  <item.icon className="w-4 h-4" />
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center gap-2">
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label="Open menu"
+                    className="text-white/80 hover:text-white hover:bg-white/10 rounded-full"
+                  >
+                    <Menu className="w-5 h-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-60 bg-[#2A0A52] border-white/10 text-white"
+                >
+                  <DropdownMenuLabel>
+                    <p className="text-sm font-medium">{profile?.full_name || "Your account"}</p>
+                    <p className="text-xs text-white/60 truncate">{user.email}</p>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-white/10" />
+                  {secondaryItems.map((item) => (
+                    <DropdownMenuItem
+                      key={item.to}
+                      onClick={() => navigate(item.to)}
+                      className="cursor-pointer focus:bg-white/10 focus:text-white"
+                    >
+                      <item.icon className="w-4 h-4 mr-2" />
+                      {item.label}
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator className="bg-white/10" />
+                  <DropdownMenuItem
+                    onClick={handleSignOut}
+                    className="cursor-pointer focus:bg-white/10 focus:text-white"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/about")}
+                  className="text-white/70 hover:text-white hover:bg-white/10 rounded-full"
+                >
+                  About
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => navigate("/auth")}
+                  className="rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+                >
+                  Sign in
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile bottom bar */}
+      {user && (
+        <nav
+          aria-label="Primary"
+          className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-white/10 bg-[#1E003D]/95 backdrop-blur-xl"
+        >
+          <div className="grid grid-cols-5">
+            {primaryItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                aria-current={isActive(item.match) ? "page" : undefined}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] transition-colors",
+                  isActive(item.match) ? "text-pink-300" : "text-white/55"
+                )}
+              >
+                <item.icon className="w-5 h-5" />
+                {item.label}
+              </NavLink>
+            ))}
+          </div>
+        </nav>
+      )}
+    </>
   );
 };
 

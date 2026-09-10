@@ -65,13 +65,13 @@ const Reports = () => {
                       <p className="text-white font-medium">Report · {formatDate(report.uploadDate)}</p>
                       <div className="flex flex-wrap gap-2 mt-3">
                         {report.tsh !== null && (
-                          <StatusBadge status={report.tshStatus} label={`TSH ${report.tsh}`} />
+                          <StatusBadge status={resolveStatus("TSH", report.tsh, report.tshStatus)} label={`TSH ${report.tsh}`} />
                         )}
                         {report.t3 !== null && (
-                          <StatusBadge status={report.t3Status} label={`T3 ${report.t3}`} />
+                          <StatusBadge status={resolveStatus("T3", report.t3, report.t3Status)} label={`T3 ${report.t3}`} />
                         )}
                         {report.t4 !== null && (
-                          <StatusBadge status={report.t4Status} label={`T4 ${report.t4}`} />
+                          <StatusBadge status={resolveStatus("T4", report.t4, report.t4Status)} label={`T4 ${report.t4}`} />
                         )}
                       </div>
                       {report.summary && (

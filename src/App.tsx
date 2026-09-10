@@ -4,7 +4,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import SplashScreen from "./components/SplashScreen";
-import HomePage from "./components/HomePage";
+import Home from "./pages/Home";
+import Reports from "./pages/Reports";
+import CarePlan from "./pages/CarePlan";
+import SettingsPage from "./pages/Settings";
+import Help from "./pages/Help";
 import ExploreFeatures from "./pages/ExploreFeatures";
 import LabReportAnalysis from "./pages/LabReportAnalysis";
 import HealthTracker from "./pages/HealthTracker";
@@ -34,7 +38,12 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<SplashScreen />} />
-          <Route path="/home" element={<HomePage />} />
+          <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+          <Route path="/assistant" element={<ProtectedRoute><Chatbot /></ProtectedRoute>} />
+          <Route path="/care-plan" element={<ProtectedRoute><CarePlan /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path="/help" element={<Help />} />
           <Route path="/explore" element={<ProtectedRoute><ExploreFeatures /></ProtectedRoute>} />
           <Route path="/lab-report" element={<ProtectedRoute><LabReportAnalysis /></ProtectedRoute>} />
           <Route path="/health-tracker" element={<ProtectedRoute><HealthTracker /></ProtectedRoute>} />

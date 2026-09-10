@@ -38,7 +38,12 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<SplashScreen />} />
-          <Route path="/home" element={<HomePage />} />
+          <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+          <Route path="/assistant" element={<ProtectedRoute><Chatbot /></ProtectedRoute>} />
+          <Route path="/care-plan" element={<ProtectedRoute><CarePlan /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path="/help" element={<Help />} />
           <Route path="/explore" element={<ProtectedRoute><ExploreFeatures /></ProtectedRoute>} />
           <Route path="/lab-report" element={<ProtectedRoute><LabReportAnalysis /></ProtectedRoute>} />
           <Route path="/health-tracker" element={<ProtectedRoute><HealthTracker /></ProtectedRoute>} />

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLabReports } from "@/hooks/useLabReports";
 import { StatusBadge } from "@/components/health/StatusBadge";
+import { resolveStatus } from "@/components/health/statusUtils";
 
 const Reports = () => {
   const navigate = useNavigate();

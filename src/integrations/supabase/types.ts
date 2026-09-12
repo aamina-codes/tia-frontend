@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointment_notes: {
+        Row: {
+          appointment_date: string
+          created_at: string
+          follow_up_date: string | null
+          id: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          appointment_date: string
+          created_at?: string
+          follow_up_date?: string | null
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          appointment_date?: string
+          created_at?: string
+          follow_up_date?: string | null
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      daily_checklist: {
+        Row: {
+          completed: boolean
+          created_at: string
+          entry_date: string
+          id: string
+          item_key: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          entry_date?: string
+          id?: string
+          item_key: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          entry_date?: string
+          id?: string
+          item_key?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      doctor_questions: {
+        Row: {
+          created_at: string
+          id: string
+          is_discussed: boolean
+          question: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_discussed?: boolean
+          question: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_discussed?: boolean
+          question?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       health_tracker: {
         Row: {
           created_at: string
@@ -131,7 +212,10 @@ export type Database = {
           date_of_birth: string | null
           diagnosis_date: string | null
           diagnosis_type: string | null
+          doctor_clinic: string | null
+          doctor_contact: string | null
           doctor_name: string | null
+          doctor_specialty: string | null
           email: string | null
           full_name: string | null
           gender: string | null
@@ -148,7 +232,10 @@ export type Database = {
           date_of_birth?: string | null
           diagnosis_date?: string | null
           diagnosis_type?: string | null
+          doctor_clinic?: string | null
+          doctor_contact?: string | null
           doctor_name?: string | null
+          doctor_specialty?: string | null
           email?: string | null
           full_name?: string | null
           gender?: string | null
@@ -165,7 +252,10 @@ export type Database = {
           date_of_birth?: string | null
           diagnosis_date?: string | null
           diagnosis_type?: string | null
+          doctor_clinic?: string | null
+          doctor_contact?: string | null
           doctor_name?: string | null
+          doctor_specialty?: string | null
           email?: string | null
           full_name?: string | null
           gender?: string | null
